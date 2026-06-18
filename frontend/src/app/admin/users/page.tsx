@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Plus, Edit2, Trash2, CheckCircle2, User, Smartphone, Check } from "lucide-react";
+import { Plus, Edit2, Trash2, CheckCircle2, X, User, Smartphone, Check } from "lucide-react";
 
 const ROLE_STYLE: Record<string, string> = {
   pengguna: "bg-gray-100 text-gray-600",
