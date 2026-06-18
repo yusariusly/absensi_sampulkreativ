@@ -57,6 +57,10 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"register" | "admin-login">("register");
   const [isCheckingDevice, setIsCheckingDevice] = useState(true);
   
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
+  const [pendingUser, setPendingUser] = useState<{ nama_lengkap: string; username: string; device_info?: string } | null>(null);
+  const [dots, setDots] = useState(".");
+
   // Registration States
   const [namaLengkap, setNamaLengkap] = useState("");
   const [noHp, setNoHp] = useState("");
@@ -88,10 +92,17 @@ export default function LoginPage() {
             localStorage.setItem("v2_user", JSON.stringify(data.user));
             if (data.user.role === "admin") {
               router.replace("/admin");
-            } else {
-              router.replace("/user");
+              return;
             }
-            return;
+            if (data.user.is_active === 1) {
+              router.replace("/user");
+              return;
+            } else {
+              setIsPendingApproval(true);
+              setPendingUser(data.user);
+              setIsCheckingDevice(false);
+              return;
+            }
           }
         }
       } catch (err) {
@@ -102,10 +113,17 @@ export default function LoginPage() {
             const parsed = JSON.parse(stored);
             if (parsed.role === "admin") {
               router.replace("/admin");
-            } else {
-              router.replace("/user");
+              return;
             }
-            return;
+            if (parsed.is_active === 1) {
+              router.replace("/user");
+              return;
+            } else {
+              setIsPendingApproval(true);
+              setPendingUser(parsed);
+              setIsCheckingDevice(false);
+              return;
+            }
           } catch (e) {}
         }
       }
@@ -121,6 +139,46 @@ export default function LoginPage() {
       active = false;
     };
   }, [router]);
+
+  // Handle dots animation & silent polling for approval
+  useEffect(() => {
+    let active = true;
+    let dotsInterval: NodeJS.Timeout;
+    let pollInterval: NodeJS.Timeout;
+
+    if (isPendingApproval) {
+      // 1. Dots animation looping: . -> .. -> ... -> .
+      dotsInterval = setInterval(() => {
+        if (!active) return;
+        setDots((prev) => {
+          if (prev === ".") return "..";
+          if (prev === "..") return "...";
+          return ".";
+        });
+      }, 600);
+
+      // 2. Background polling: check if approved every 3 seconds
+      const deviceId = getOrCreateDeviceId();
+      pollInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/auth/check-device?device_id=${deviceId}`);
+          const data = await response.json();
+          if (active && response.ok && data.registered && data.user.is_active === 1) {
+            localStorage.setItem("v2_user", JSON.stringify(data.user));
+            router.replace("/user");
+          }
+        } catch (e) {
+          console.error("Gagal melakukan pencocokan latar belakang:", e);
+        }
+      }, 3000);
+    }
+
+    return () => {
+      active = false;
+      clearInterval(dotsInterval);
+      clearInterval(pollInterval);
+    };
+  }, [isPendingApproval, router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +215,14 @@ export default function LoginPage() {
       }
 
       localStorage.setItem("v2_user", JSON.stringify(data));
-      router.push("/user");
+      
+      if (data.is_active === 1) {
+        router.push("/user");
+      } else {
+        setIsPendingApproval(true);
+        setPendingUser(data);
+        setLoading(false);
+      }
     } catch (err) {
       setError("Terjadi kesalahan koneksi internet");
       setLoading(false);
@@ -218,6 +283,57 @@ export default function LoginPage() {
             <div className="w-2.5 h-2.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
             <div className="w-2.5 h-2.5 rounded-full bg-[#F6C13B] animate-bounce [animation-delay:-0.15s]" />
             <div className="w-2.5 h-2.5 rounded-full bg-white animate-bounce" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isPendingApproval && pendingUser) {
+    return (
+      <div className="min-h-screen w-full bg-gradient-to-br from-[#1C3D3F] via-[#2AB0B2] to-[#209092] flex flex-col items-center justify-center text-white p-6">
+        <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/20 p-8 rounded-3xl shadow-2xl text-center space-y-6 animate-fade-in">
+          <div className="mx-auto w-16 h-16 bg-amber-500/20 text-[#F6C13B] rounded-full flex items-center justify-center border border-amber-500/30">
+            <Shield size={32} className="animate-pulse" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold tracking-wide">Pendaftaran Berhasil!</h2>
+            <p className="text-sm text-white/80">
+              Halo, <span className="font-semibold text-white">{pendingUser.nama_lengkap}</span>. HP Anda telah berhasil terhubung di sistem absensi.
+            </p>
+          </div>
+
+          <div className="bg-black/10 rounded-2xl p-4 text-left space-y-2 border border-white/10 text-xs font-medium text-white/90">
+            <div>
+              <span className="text-white/60 block">Nomor HP / WhatsApp</span>
+              <span>{pendingUser.username}</span>
+            </div>
+            <div>
+              <span className="text-white/60 block">Perangkat HP</span>
+              <span>{pendingUser.device_info || "Perangkat Terikat"}</span>
+            </div>
+            <div>
+              <span className="text-white/60 block">Status Akun</span>
+              <span className="text-[#F6C13B] font-bold">Menunggu Persetujuan Admin{dots}</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-white/70 italic">
+            Harap hubungi Administrator kantor untuk memberikan persetujuan akses pada akun Anda agar dapat melakukan absensi.
+          </p>
+
+          <div className="pt-2 flex flex-col gap-3">
+            <button
+              onClick={() => {
+                localStorage.removeItem("v2_user");
+                setIsPendingApproval(false);
+                setPendingUser(null);
+              }}
+              className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all cursor-pointer text-sm border border-white/20 active:scale-98"
+            >
+              Ganti Akun / Daftar Ulang
+            </button>
           </div>
         </div>
       </div>
