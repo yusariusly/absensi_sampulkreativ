@@ -807,7 +807,10 @@ app.post('/api/settings', async (req, res) => {
     }
 
     if (telegram_chat_id !== undefined) {
-      const chatIdVal = telegram_chat_id.toString().trim();
+      let chatIdVal = telegram_chat_id.toString().trim();
+      if (chatIdVal.startsWith('-') && !chatIdVal.startsWith('-100')) {
+        chatIdVal = '-100' + chatIdVal.slice(1);
+      }
       await pool.query(
         "INSERT INTO settings (key_name, key_value) VALUES ('telegram_chat_id', ?) ON DUPLICATE KEY UPDATE key_value = ?",
         [chatIdVal, chatIdVal]

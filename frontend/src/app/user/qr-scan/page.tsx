@@ -5,27 +5,6 @@ import { useRouter } from "next/navigation";
 import { X, CameraOff, RefreshCw, AlertCircle } from "lucide-react";
 import jsQR from "jsqr";
 
-function QrCodeGraphic() {
-  return (
-    <svg width="130" height="130" viewBox="0 0 130 130" fill="white" className="opacity-80">
-      <rect x="8" y="8" width="44" height="44" rx="3" fill="none" stroke="white" strokeWidth="5" />
-      <rect x="19" y="19" width="22" height="22" fill="white" />
-      <rect x="78" y="8" width="44" height="44" rx="3" fill="none" stroke="white" strokeWidth="5" />
-      <rect x="89" y="19" width="22" height="22" fill="white" />
-      <rect x="8" y="78" width="44" height="44" rx="3" fill="none" stroke="white" strokeWidth="5" />
-      <rect x="19" y="89" width="22" height="22" fill="white" />
-      <rect x="78" y="78" width="10" height="10" fill="white" />
-      <rect x="93" y="78" width="10" height="10" fill="white" />
-      <rect x="108" y="78" width="14" height="10" fill="white" />
-      <rect x="78" y="93" width="18" height="10" fill="white" />
-      <rect x="100" y="93" width="10" height="10" fill="white" />
-      <rect x="78" y="108" width="10" height="14" fill="white" />
-      <rect x="93" y="108" width="29" height="8" fill="white" />
-      <rect x="112" y="100" width="10" height="22" fill="white" />
-    </svg>
-  );
-}
-
 export default function QRScanPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -191,20 +170,6 @@ export default function QRScanPage() {
               style={{ borderColor: "#2AB0B2" }}
             />
           ))}
-
-          {/* Inner transparent graphic area */}
-          <div className="absolute inset-3 rounded-lg overflow-hidden bg-black/10 flex items-center justify-center">
-            <QrCodeGraphic />
-          </div>
-
-          {/* Glowing animated scanline */}
-          <div
-            className="absolute left-3 right-3 h-0.5 z-20 rounded-full animate-scan"
-            style={{
-              backgroundColor: "#2AB0B2",
-              boxShadow: "0 0 12px 3px rgba(42, 176, 178, 0.75)",
-            }}
-          />
         </div>
       )}
 
