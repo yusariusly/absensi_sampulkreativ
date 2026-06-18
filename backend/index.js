@@ -712,10 +712,13 @@ app.delete('/api/users', async (req, res) => {
       return res.status(403).json({ error: 'Akun administrator utama tidak dapat dihapus' });
     }
 
-    await pool.query('UPDATE users SET is_active = 0 WHERE id = ?', [user.id]);
+    // Delete related attendance records
+    await pool.query('DELETE FROM absensi WHERE user_id = ?', [user.id]);
+    // Delete the user record
+    await pool.query('DELETE FROM users WHERE id = ?', [user.id]);
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: 'Gagal menonaktifkan pengguna' });
+    res.status(500).json({ error: 'Gagal menghapus pengguna dari database' });
   }
 });
 

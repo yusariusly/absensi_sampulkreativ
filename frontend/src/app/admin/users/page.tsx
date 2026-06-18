@@ -169,7 +169,7 @@ export default function AdminUsersPage() {
   };
 
   const handleDeleteUser = async (usr: string) => {
-    if (confirm(`Apakah Anda yakin ingin menonaktifkan pengguna @${usr}?`)) {
+    if (confirm(`Apakah Anda yakin ingin menghapus permanen pengguna @${usr} beserta seluruh data absensinya? Tindakan ini tidak dapat dibatalkan!`)) {
       try {
         const res = await fetch("/api/users", {
           method: "DELETE",
@@ -180,7 +180,7 @@ export default function AdminUsersPage() {
         const data = await res.json();
 
         if (res.ok) {
-          showToast(`🗑️ Akun "${usr}" berhasil dinonaktifkan`);
+          showToast(`🗑️ Akun "${usr}" berhasil dihapus secara permanen`);
           fetchUsers(); // Refresh list
         } else {
           showToast(`⚠️ ${data.error || "Gagal menghapus pengguna"}`);
@@ -277,7 +277,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => handleDeleteUser(u.username)}
                             className="text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
-                            title="Deaktif Akun"
+                            title="Hapus Akun Permanen"
                           >
                             <Trash2 size={16} />
                           </button>
