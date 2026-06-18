@@ -70,15 +70,22 @@ async function initDb() {
         nama_lengkap VARCHAR(100) NOT NULL,
         role VARCHAR(20) NOT NULL,
         is_active TINYINT(1) DEFAULT 1,
-        foto_profile VARCHAR(255) DEFAULT '/uploads/placeholder.jpg'
+        foto_profile TEXT DEFAULT '/uploads/placeholder.jpg'
       )
     `);
 
     // Migration to add column if table exists without it
     try {
-      await pool.query("ALTER TABLE users ADD COLUMN foto_profile VARCHAR(255) DEFAULT '/uploads/placeholder.jpg'");
+      await pool.query("ALTER TABLE users ADD COLUMN foto_profile TEXT DEFAULT '/uploads/placeholder.jpg'");
     } catch (err) {
       // Column already exists, safe to ignore
+    }
+
+    // Force column type conversion to TEXT for existing VARCHAR columns
+    try {
+      await pool.query("ALTER TABLE users ALTER COLUMN foto_profile TYPE TEXT");
+    } catch (err) {
+      // Ignore type conversion errors
     }
 
     try {
@@ -1022,32 +1029,16 @@ app.post('/api/users/update-profile', async (req, res) => {
     if (userRows.length === 0) {
       return res.status(404).json({ error: 'Pengguna tidak ditemukan' });
     }
-    const user = userRows[0];
 
-    let fotoUrl = '/uploads/placeholder.jpg';
-    if (foto_base64.startsWith('data:image')) {
-      try {
-        const matches = foto_base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const extension = matches[1].split('/')[1] || 'jpg';
-          const buffer = Buffer.from(matches[2], 'base64');
-          const filename = `profile-${user.username}-${Date.now()}.${extension}`;
-          const filepath = path.join(uploadDir, filename);
-
-          fs.writeFileSync(filepath, buffer);
-          fotoUrl = `/uploads/${filename}`;
-        }
-      } catch (err) {
-        console.error('Gagal menyimpan foto profil:', err);
-        return res.status(500).json({ error: 'Gagal menyimpan file foto' });
-      }
-    } else {
+    if (!foto_base64.startsWith('data:image')) {
       return res.status(400).json({ error: 'Format foto tidak valid' });
     }
 
-    await pool.query('UPDATE users SET foto_profile = ? WHERE id = ?', [fotoUrl, user_id]);
-    res.json({ success: true, foto_profile: fotoUrl });
+    // Save base64 string directly in Supabase PostgreSQL
+    await pool.query('UPDATE users SET foto_profile = ? WHERE id = ?', [foto_base64, user_id]);
+    res.json({ success: true, foto_profile: foto_base64 });
   } catch (error) {
+    console.error('Gagal memperbarui foto profil:', error);
     res.status(500).json({ error: 'Gagal memperbarui foto profil' });
   }
 });
@@ -1057,6 +1048,7 @@ if (process.env.VERCEL) {
 } else {
   app.listen(PORT, () => {
     console.log(`Server Express backend berjalan pada http://localhost:${PORT}`);
+    initDb().catch(err => console.error("Gagal melakukan inisialisasi basis data:", err));
   });
 }
 

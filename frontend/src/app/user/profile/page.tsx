@@ -35,40 +35,69 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Convert file to base64
+    // Convert file to base64 and downscale it
     const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      setLoading(true);
-      setError("");
-      setSuccessMsg("");
-      
-      try {
-        const res = await fetch("/api/users/update-profile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId, foto_base64: base64 }),
-        });
-        
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setProfilePhoto(data.foto_profile);
-          
-          // Update local storage
-          const storedUser = localStorage.getItem("v2_user");
-          if (storedUser) {
-            const userObj = JSON.parse(storedUser);
-            userObj.foto_profile = data.foto_profile;
-            localStorage.setItem("v2_user", JSON.stringify(userObj));
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = async () => {
+        // Target size of 200x200 for clean preview and low database storage overhead
+        const maxDim = 200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
           }
         } else {
-          setError(data.error || "Gagal mengubah foto profil");
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
         }
-      } catch (err) {
-        setError("Kesalahan koneksi ke server");
-      } finally {
-        setLoading(false);
-      }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const base64 = canvas.toDataURL("image/jpeg", 0.75);
+
+        setLoading(true);
+        setError("");
+        setSuccessMsg("");
+        
+        try {
+          const res = await fetch("/api/users/update-profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId, foto_base64: base64 }),
+          });
+          
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setProfilePhoto(data.foto_profile);
+            
+            // Update local storage
+            const storedUser = localStorage.getItem("v2_user");
+            if (storedUser) {
+              const userObj = JSON.parse(storedUser);
+              userObj.foto_profile = data.foto_profile;
+              localStorage.setItem("v2_user", JSON.stringify(userObj));
+            }
+          } else {
+            setError(data.error || "Gagal mengubah foto profil");
+          }
+        } catch (err) {
+          setError("Kesalahan koneksi ke server");
+        } finally {
+          setLoading(false);
+        }
+      };
+      img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
