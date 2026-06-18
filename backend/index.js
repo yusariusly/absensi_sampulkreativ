@@ -27,9 +27,6 @@ const pgPool = new mysql.Pool({
 const pool = {
   query: async (text, params) => {
     let pgText = text;
-    let paramIndex = 1;
-    pgText = pgText.replace(/\?/g, () => `$${paramIndex++}`);
-
     pgText = pgText.replace(/TINYINT\(1\)/gi, 'SMALLINT');
     pgText = pgText.replace(/DATETIME/gi, 'TIMESTAMP');
     pgText = pgText.replace(/ON DUPLICATE KEY UPDATE token = \?, created_at = \?, is_active = \?/gi, 
@@ -39,7 +36,11 @@ const pool = {
     pgText = pgText.replace(/ON DUPLICATE KEY UPDATE key_value = key_value/gi, 
       'ON CONFLICT (key_name) DO NOTHING');
 
-    const res = await pgPool.query(pgText, params);
+    let paramIndex = 1;
+    pgText = pgText.replace(/\?/g, () => `$${paramIndex++}`);
+
+    const finalParams = params ? params.slice(0, paramIndex - 1) : params;
+    const res = await pgPool.query(pgText, finalParams);
     
     const rows = res.rows.map(row => {
       const mappedRow = { ...row };
