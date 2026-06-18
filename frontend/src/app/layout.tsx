@@ -8,8 +8,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Absensi - Sistem Absensi",
-  description: "Modern Employee Attendance PWA & Admin Dashboard",
+  title: "Absensi SK",
+  description: "Sistem Absensi Karyawan Sampul Kreativ",
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: "/favicon-32x32.png",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -20,10 +26,30 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <head>
-        {/* Load Inter font and customize font-sans */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Absensi SK" />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(
+                    function(reg) {
+                      console.log('ServiceWorker registration successful');
+                    },
+                    function(err) {
+                      console.log('ServiceWorker registration failed: ', err);
+                    }
+                  );
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
