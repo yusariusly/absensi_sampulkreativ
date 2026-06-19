@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Search, Calendar, ChevronDown, Download, CheckCircle2, XCircle, Send } from "lucide-react";
+import { Search, Calendar, ChevronDown, Download, CheckCircle2, XCircle, Send, ChevronLeft, ChevronRight } from "lucide-react";
 
 const TEAL = "#2AB0B2";
 
@@ -31,6 +31,15 @@ export default function AdminDataPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getLocalDateString = (date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString(new Date()));
+
   // Photo Audit Modal State
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [selectedLogName, setSelectedLogName] = useState("");
@@ -53,15 +62,35 @@ export default function AdminDataPage() {
     fetchLogs();
   }, []);
 
+  const handlePrevDay = () => {
+    const current = new Date(selectedDate);
+    current.setDate(current.getDate() - 1);
+    setSelectedDate(getLocalDateString(current));
+  };
+
+  const handleNextDay = () => {
+    const current = new Date(selectedDate);
+    const todayStr = getLocalDateString(new Date());
+    if (getLocalDateString(current) === todayStr) return; // Prevent going to tomorrow
+    current.setDate(current.getDate() + 1);
+    setSelectedDate(getLocalDateString(current));
+  };
+
   const AVATAR_COLORS = [TEAL, "#F6C13B", "#10B981", "#3B82F6", "#6B7280", "#8B5CF6", "#F59E0B"];
 
-  // Filter rows based on search query
-  const filteredRows = rows.filter(
-    (row) =>
+  // Filter rows based on search query and selected date
+  const filteredRows = rows.filter((row) => {
+    // 1. Match selected date
+    const logDateStr = getLocalDateString(new Date(row.waktu_absen));
+    if (logDateStr !== selectedDate) return false;
+
+    // 2. Match search query
+    return (
       row.nama_lengkap.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (row.username && row.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
       row.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    );
+  });
 
   const formatDateTime = (isoString: string) => {
     const d = new Date(isoString);
@@ -149,7 +178,7 @@ export default function AdminDataPage() {
       )}
 
       {/* Header bar with controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-[#1C3D3F]">Data Absensi</h1>
         </div>
@@ -165,8 +194,39 @@ export default function AdminDataPage() {
               className="flex-1 outline-none text-sm text-gray-500 bg-transparent"
             />
           </div>
+
+          {/* Date Selector with Previous/Next controls */}
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-xs">
+            <button
+              onClick={handlePrevDay}
+              className="p-2 text-gray-500 hover:text-[#2AB0B2] hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+              title="Hari Sebelumnya"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            
+            <div className="flex items-center gap-1.5 px-2">
+              <Calendar size={14} className="text-[#2AB0B2]" />
+              <input
+                type="date"
+                value={selectedDate}
+                max={getLocalDateString(new Date())}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="outline-none text-sm font-semibold text-gray-750 bg-transparent border-0 cursor-pointer"
+              />
+            </div>
+
+            <button
+              onClick={handleNextDay}
+              disabled={selectedDate === getLocalDateString(new Date())}
+              className="p-2 text-gray-500 hover:text-[#2AB0B2] hover:bg-gray-50 rounded-lg transition-colors cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed"
+              title="Hari Selanjutnya"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
           
-          {/* Date Picker Button */}
+          {/* Export CSV Button */}
           <button
             onClick={handleExportCSV}
             disabled={filteredRows.length === 0}
