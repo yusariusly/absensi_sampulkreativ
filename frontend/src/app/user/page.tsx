@@ -190,21 +190,7 @@ export default function UserHomePage() {
           </div>
         </div>
 
-        {/* Info Box for new policy */}
-        <div className="bg-[#2AB0B2]/5 border border-[#2AB0B2]/10 rounded-2xl p-4 text-xs text-gray-500 space-y-2">
-          <p className="font-bold text-[#1C3D3F] mb-0.5">Informasi Kebijakan Absensi:</p>
-          <div className="space-y-1">
-            <p>
-              • <strong>Absen Masuk</strong>: Dapat dilakukan kapan saja sepanjang hari (tidak ada batas waktu).
-            </p>
-            <p>
-              • <strong>Absen Pulang</strong>: Dapat dilakukan kapan saja setelah Anda melakukan Absen Masuk.
-            </p>
-            <p>
-              • <strong>Ketidakhadiran</strong>: Jika Anda tidak melakukan Absen Masuk sepanjang hari, maka pada hari berikutnya status kehadiran hari tersebut akan otomatis terhitung sebagai <strong className="text-red-500">Alpa</strong>.
-            </p>
-          </div>
-        </div>
+
 
         {/* Copyright */}
         <p className="text-[10px] text-gray-400 text-center py-4 select-none">
