@@ -166,20 +166,6 @@ export default function LoginPage() {
               const activeToken = token || sessionStorage.getItem("v2_scanned_token");
               if (activeToken) {
                 try {
-                  // Fetch settings to get checkout_time
-                  let checkoutTime = "17:00";
-                  const settingsRes = await fetch("/api/settings");
-                  if (settingsRes.ok) {
-                    const settingsData = await settingsRes.json();
-                    if (settingsData.checkout_time) {
-                      checkoutTime = settingsData.checkout_time;
-                    }
-                  }
-
-                  const [chkH, chkM] = checkoutTime.split(":").map(Number);
-                  const now = new Date();
-                  const isCheckoutPeriod = now.getHours() > chkH || (now.getHours() === chkH && now.getMinutes() >= chkM);
-
                   const attnRes = await fetch(`/api/attendance?user_id=${data.user.id}`);
                   if (attnRes.ok) {
                     const logs = await attnRes.json();
@@ -190,28 +176,22 @@ export default function LoginPage() {
                       (log: any) => new Date(log.waktu_absen).getTime() >= todayStart.getTime()
                     );
 
-                    if (isCheckoutPeriod) {
-                      const hasClockedOut = todayLogs.some((log: any) => log.status === "Pulang");
-                      if (hasClockedOut) {
-                        localStorage.setItem("v2_clockOutDate", todayStart.toDateString());
-                        router.replace("/user");
-                        return;
-                      } else {
-                        sessionStorage.setItem("v2_absen_type", "pulang");
-                        router.replace("/user/selfie");
-                        return;
-                      }
+                    const hasClockedOut = todayLogs.some((log: any) => log.status === "Pulang");
+                    const hasClockedIn = todayLogs.some((log: any) => log.status === "Hadir" || log.status === "Terlambat");
+
+                    if (hasClockedOut) {
+                      localStorage.setItem("v2_clockOutDate", todayStart.toDateString());
+                      router.replace("/user");
+                      return;
+                    } else if (hasClockedIn) {
+                      localStorage.setItem("v2_clockInDate", todayStart.toDateString());
+                      sessionStorage.setItem("v2_absen_type", "pulang");
+                      router.replace("/user/selfie");
+                      return;
                     } else {
-                      const hasClockedIn = todayLogs.some((log: any) => log.status === "Hadir" || log.status === "Terlambat");
-                      if (hasClockedIn) {
-                        localStorage.setItem("v2_clockInDate", todayStart.toDateString());
-                        router.replace("/user");
-                        return;
-                      } else {
-                        sessionStorage.setItem("v2_absen_type", "masuk");
-                        router.replace("/user/selfie");
-                        return;
-                      }
+                      sessionStorage.setItem("v2_absen_type", "masuk");
+                      router.replace("/user/selfie");
+                      return;
                     }
                   }
                 } catch (e) {
@@ -246,25 +226,15 @@ export default function LoginPage() {
                 const todayStr = new Date().toDateString();
                 const lastClockInDate = localStorage.getItem("v2_clockInDate");
                 const lastClockOutDate = localStorage.getItem("v2_clockOutDate");
-                
-                // Estimate if past 17:00
-                const now = new Date();
-                const isPastCheckout = now.getHours() >= 17;
-                
-                if (isPastCheckout) {
-                  if (lastClockOutDate === todayStr) {
-                    router.replace("/user");
-                  } else {
-                    sessionStorage.setItem("v2_absen_type", "pulang");
-                    router.replace("/user/selfie");
-                  }
+
+                if (lastClockOutDate === todayStr) {
+                  router.replace("/user");
+                } else if (lastClockInDate === todayStr) {
+                  sessionStorage.setItem("v2_absen_type", "pulang");
+                  router.replace("/user/selfie");
                 } else {
-                  if (lastClockInDate === todayStr) {
-                    router.replace("/user");
-                  } else {
-                    sessionStorage.setItem("v2_absen_type", "masuk");
-                    router.replace("/user/selfie");
-                  }
+                  sessionStorage.setItem("v2_absen_type", "masuk");
+                  router.replace("/user/selfie");
                 }
               } else {
                 router.replace("/user");

@@ -102,7 +102,7 @@ export default function AdminSettingsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-[#1C3D3F]">Pengaturan Sistem</h1>
-          <p className="text-gray-400 text-sm mt-1">Konfigurasi batasan waktu kehadiran dan jadwal absensi harian</p>
+          <p className="text-gray-400 text-sm mt-1">Konfigurasi lokasi koordinat kantor dan integrasi notifikasi Telegram</p>
         </div>
       </div>
 
@@ -115,49 +115,6 @@ export default function AdminSettingsPage() {
             </div>
           ) : (
             <form onSubmit={handleSave} className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-4">
-                <Clock size={22} className="text-[#2AB0B2]" />
-                <h3 className="font-bold text-gray-800 text-lg">Konfigurasi Batas Absen</h3>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Jam Batas Absen Masuk (Alpa)
-                </label>
-                <div className="flex items-center gap-2.5 max-w-[200px]">
-                  <input
-                     type="time"
-                     value={deadlineTime}
-                     onChange={(e) => setDeadlineTime(e.target.value)}
-                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 font-semibold text-center text-lg bg-gray-50 focus:bg-white transition-all cursor-pointer"
-                     required
-                  />
-                  <span className="text-sm font-bold text-gray-500">WIB</span>
-                </div>
-                <p className="text-gray-400 text-xs mt-2 leading-relaxed">
-                  Semua karyawan yang belum melakukan absen masuk melewati jam ini akan otomatis terhitung sebagai <strong className="text-red-500">Alpa</strong> pada dashboard beranda mereka.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Jam Pulang (Absen Pulang)
-                </label>
-                <div className="flex items-center gap-2.5 max-w-[200px]">
-                  <input
-                     type="time"
-                     value={checkoutTime}
-                     onChange={(e) => setCheckoutTime(e.target.value)}
-                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 font-semibold text-center text-lg bg-gray-50 focus:bg-white transition-all cursor-pointer"
-                     required
-                  />
-                  <span className="text-sm font-bold text-gray-500">WIB</span>
-                </div>
-                <p className="text-gray-400 text-xs mt-2 leading-relaxed">
-                  Setelah melewati jam ini, karyawan akan melihat tombol <strong className="text-[#2AB0B2]">Absen Pulang</strong> pada dashboard mereka untuk mengakhiri waktu kerja hari ini.
-                </p>
-              </div>
-
               {/* Office Coordinates Section */}
               <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-4 pt-4">
                 <MapPin size={22} className="text-[#2AB0B2]" />
@@ -256,10 +213,7 @@ export default function AdminSettingsPage() {
             • <strong>Radius Jarak GPS (100m)</strong>: Jika koordinat diatur, server akan secara otomatis memverifikasi GPS karyawan dan menolak absensi jika jarak melebihi 100 meter dari kantor.
           </p>
           <p className="leading-relaxed">
-            • <strong>Absensi Terlambat</strong>: Karyawan masih dapat melakukan absensi jika disetujui, namun indikator status kehadiran mereka di beranda akan tetap menampilkan label peringatan Alpa.
-          </p>
-          <p className="leading-relaxed">
-            • <strong>Waktu Server Aman</strong>: Jam batas absensi dicocokkan dengan jam lokal server (WIB) untuk mencegah kecurangan manipulasi jam di ponsel karyawan.
+            • <strong>Generator Otomatis Status Alpa</strong>: Setiap kali pengguna memuat beranda mereka pada hari baru, sistem akan mendeteksi hari-hari yang terlewat dan secara otomatis mengisi status kehadiran mereka sebagai <strong>Alpa</strong>.
           </p>
         </div>
       </div>

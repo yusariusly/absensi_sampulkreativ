@@ -121,6 +121,12 @@ async function initDb() {
       // Column already exists, safe to ignore
     }
 
+    try {
+      await pool.query("ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+    } catch (err) {
+      // Column already exists, safe to ignore
+    }
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS absensi (
         id VARCHAR(50) PRIMARY KEY,
@@ -340,10 +346,79 @@ app.get('/api/auth/check-device', async (req, res) => {
   }
 });
 
+const fillAlpaForUser = async (userId) => {
+  try {
+    const [userRows] = await pool.query('SELECT username, nama_lengkap, created_at FROM users WHERE id = ?', [userId]);
+    if (userRows.length === 0) return;
+    const user = userRows[0];
+
+    const signupDate = user.created_at ? new Date(user.created_at) : new Date();
+    signupDate.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
+
+    if (signupDate.getTime() > yesterday.getTime()) {
+      return;
+    }
+
+    const [attnRows] = await pool.query('SELECT waktu_absen FROM absensi WHERE user_id = ?', [userId]);
+    const existingDates = new Set(
+      attnRows.map(row => {
+        const d = new Date(row.waktu_absen);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      })
+    );
+
+    let current = new Date(signupDate);
+    while (current.getTime() <= yesterday.getTime()) {
+      const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+      
+      if (!existingDates.has(dateStr)) {
+        const recordId = `alpa-${userId}-${dateStr}`;
+        const waktuAbsen = new Date(current);
+        waktuAbsen.setHours(9, 0, 0, 0);
+
+        await pool.query(
+          `INSERT INTO absensi (id, user_id, username, nama_lengkap, waktu_absen, foto_url, latitude, longitude, status, diubah_oleh_admin) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            recordId,
+            userId,
+            user.username,
+            user.nama_lengkap,
+            waktuAbsen,
+            'placeholder',
+            null,
+            null,
+            'Alpa',
+            0
+          ]
+        );
+      }
+      current.setDate(current.getDate() + 1);
+    }
+  } catch (err) {
+    console.error(`Gagal mengisi Alpa untuk user ${userId}:`, err);
+  }
+};
+
 // 2. Attendance GET & POST
 app.get('/api/attendance', async (req, res) => {
   try {
     const { user_id } = req.query;
+
+    if (user_id) {
+      await fillAlpaForUser(user_id);
+    } else {
+      const [users] = await pool.query("SELECT id FROM users WHERE role = 'user' AND is_active = 1");
+      for (const u of users) {
+        await fillAlpaForUser(u.id);
+      }
+    }
+
     let query = 'SELECT * FROM absensi';
     let params = [];
 

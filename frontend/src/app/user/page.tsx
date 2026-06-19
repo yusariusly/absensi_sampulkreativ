@@ -10,15 +10,13 @@ export default function UserHomePage() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [clockInTime, setClockInTime] = useState<string | null>(null);
   const [clockOutTime, setClockOutTime] = useState<string | null>(null);
-  const [deadlineTime, setDeadlineTime] = useState("08:30");
-  const [checkoutTime, setCheckoutTime] = useState("17:00");
   const [loading, setLoading] = useState(true);
   
   // Clock state
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const fetchAttendanceAndSettings = async () => {
+    const fetchAttendance = async () => {
       if (typeof window === "undefined") return;
 
       const storedUser = localStorage.getItem("v2_user");
@@ -32,24 +30,10 @@ export default function UserHomePage() {
         setFullname(userObj.nama_lengkap);
         setProfilePhoto(userObj.foto_profile || null);
 
-        // 1. Fetch settings (deadline & checkout time)
-        const settingsRes = await fetch("/api/settings");
-        if (settingsRes.ok) {
-          const settings = await settingsRes.json();
-          if (settings.deadline_time) {
-            setDeadlineTime(settings.deadline_time);
-          }
-          if (settings.checkout_time) {
-            setCheckoutTime(settings.checkout_time);
-          }
-        }
-
-        // 2. Fetch logs from backend
         const res = await fetch(`/api/attendance?user_id=${userObj.id}`);
         if (res.ok) {
           const logs = await res.json();
           
-          // Check if today has check-in & check-out records
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);
 
@@ -57,12 +41,10 @@ export default function UserHomePage() {
             (log: any) => new Date(log.waktu_absen).getTime() >= todayStart.getTime()
           );
 
-          // Find check-in log (status === 'Hadir' or status === 'Terlambat')
           const checkInLog = todayLogs.find(
             (log: any) => log.status === 'Hadir' || log.status === 'Terlambat'
           );
 
-          // Find check-out log (status === 'Pulang')
           const checkOutLog = todayLogs.find(
             (log: any) => log.status === 'Pulang'
           );
@@ -92,7 +74,7 @@ export default function UserHomePage() {
       }
     };
 
-    fetchAttendanceAndSettings();
+    fetchAttendance();
     const clockInterval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(clockInterval);
   }, [router]);
@@ -107,30 +89,6 @@ export default function UserHomePage() {
   const hh = pad(now.getHours());
   const mm = pad(now.getMinutes());
   const dateStr = `${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
-
-  // Check if current time exceeds deadline time
-  const isPastDeadline = () => {
-    const [deadH, deadM] = deadlineTime.split(":").map(Number);
-    const currentH = now.getHours();
-    const currentM = now.getMinutes();
-
-    if (currentH > deadH) return true;
-    if (currentH === deadH && currentM >= deadM) return true;
-    return false;
-  };
-
-  // Check if current time exceeds checkout time
-  const isPastCheckout = () => {
-    const [chkH, chkM] = checkoutTime.split(":").map(Number);
-    const currentH = now.getHours();
-    const currentM = now.getMinutes();
-
-    if (currentH > chkH) return true;
-    if (currentH === chkH && currentM >= chkM) return true;
-    return false;
-  };
-
-  const isAlpaStatus = !clockInTime && isPastDeadline();
 
   const handleStartAbsen = () => {
     sessionStorage.setItem("v2_absen_type", "masuk");
@@ -194,17 +152,9 @@ export default function UserHomePage() {
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> Sudah Absen Pulang ({clockOutTime})
                 </span>
-              ) : isPastCheckout() ? (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-100">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F6C13B] animate-pulse" /> Waktunya Absen Pulang
-                </span>
               ) : clockInTime ? (
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Sudah Absen Masuk ({clockInTime})
-                </span>
-              ) : isAlpaStatus ? (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-100">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Terhitung Alpa
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-100">
@@ -220,29 +170,13 @@ export default function UserHomePage() {
                   <div className="text-center text-xs text-gray-400 font-semibold py-2.5 bg-gray-50 border border-dashed border-gray-200 rounded-2xl">
                     ✅ Anda telah menyelesaikan absen pulang untuk hari ini
                   </div>
-                ) : isPastCheckout() ? (
+                ) : clockInTime ? (
                   <button
                     onClick={handleStartAbsenPulang}
                     className="w-full py-4 rounded-2xl text-white font-bold text-lg flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-transform bg-indigo-600 hover:bg-indigo-700 cursor-pointer"
                   >
                     <Camera size={20} /> Absen Pulang
                   </button>
-                ) : clockInTime ? (
-                  <div className="text-center text-xs text-gray-400 font-semibold py-2 bg-gray-50 border border-dashed border-gray-200 rounded-2xl">
-                    ✅ Kehadiran terverifikasi untuk hari ini
-                  </div>
-                ) : isAlpaStatus ? (
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={handleStartAbsen}
-                      className="w-full py-3.5 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform bg-[#2AB0B2]/60 cursor-pointer"
-                    >
-                      <Camera size={18} /> Tetap Absen (Terlambat)
-                    </button>
-                    <p className="text-center text-[10px] text-red-500 font-medium">
-                      ⚠️ Batas absen masuk ({deadlineTime}) telah berakhir
-                    </p>
-                  </div>
                 ) : (
                   <button
                     onClick={handleStartAbsen}
@@ -256,15 +190,18 @@ export default function UserHomePage() {
           </div>
         </div>
 
-        {/* Info Box for deadline & checkout */}
+        {/* Info Box for new policy */}
         <div className="bg-[#2AB0B2]/5 border border-[#2AB0B2]/10 rounded-2xl p-4 text-xs text-gray-500 space-y-2">
-          <p className="font-bold text-[#1C3D3F] mb-0.5">Informasi Jadwal Absensi:</p>
+          <p className="font-bold text-[#1C3D3F] mb-0.5">Informasi Kebijakan Absensi:</p>
           <div className="space-y-1">
             <p>
-              • <strong>Batas Absen Masuk</strong>: Paling lambat pukul <strong className="text-[#2AB0B2]">{deadlineTime} WIB</strong>. Melewati jam tersebut otomatis terhitung <strong className="text-red-500">Alpa</strong>.
+              • <strong>Absen Masuk</strong>: Dapat dilakukan kapan saja sepanjang hari (tidak ada batas waktu).
             </p>
             <p>
-              • <strong>Waktu Absen Pulang</strong>: Dapat dilakukan mulai pukul <strong className="text-indigo-600">{checkoutTime} WIB</strong>.
+              • <strong>Absen Pulang</strong>: Dapat dilakukan kapan saja setelah Anda melakukan Absen Masuk.
+            </p>
+            <p>
+              • <strong>Ketidakhadiran</strong>: Jika Anda tidak melakukan Absen Masuk sepanjang hari, maka pada hari berikutnya status kehadiran hari tersebut akan otomatis terhitung sebagai <strong className="text-red-500">Alpa</strong>.
             </p>
           </div>
         </div>
