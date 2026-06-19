@@ -100,7 +100,7 @@ export default function AdminDashboardPage() {
   const AVATAR_COLORS = [TEAL, "#10B981", "#3B82F6", "#F59E0B"];
 
   return (
-    <div className="flex-1 bg-[#F0F2F5] p-6 md:p-10 select-none relative">
+    <div className="flex-1 bg-[#F0F2F5] p-4 md:p-8 select-none relative">
       {/* Photo View Modal Overlay */}
       {selectedPhoto && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
@@ -138,31 +138,31 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      <h1 className="text-3xl font-bold mb-9 text-[#1C3D3F]">Dashboard Admin</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-9 text-[#1C3D3F]">Dashboard Admin</h1>
 
       {/* Stat Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-2xl shadow-xs p-8 flex flex-col items-center border border-gray-100/50">
-          <p className="text-gray-500 font-medium mb-4 text-sm">Total Karyawan</p>
-          <p className="font-black text-[#1C3D3F]" style={{ fontSize: 72, lineHeight: 1 }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+        <div className="bg-white rounded-2xl shadow-xs p-6 md:p-8 flex flex-col items-center border border-gray-100/50">
+          <p className="text-gray-500 font-medium mb-2 md:mb-4 text-xs md:text-sm">Total Karyawan</p>
+          <p className="font-black text-[#1C3D3F] text-5xl md:text-7xl leading-none">
             {loading ? "..." : totalUsers}
           </p>
         </div>
         <div
-          className="bg-white rounded-2xl shadow-xs p-8 flex flex-col items-center border border-gray-100/50"
+          className="bg-white rounded-2xl shadow-xs p-6 md:p-8 flex flex-col items-center border border-gray-100/50"
           style={{ borderTop: `5px solid ${TEAL}` }}
         >
-          <p className="text-gray-500 font-medium mb-4 text-sm">Hadir Hari Ini</p>
-          <p className="font-black text-[#1C3D3F]" style={{ fontSize: 72, lineHeight: 1 }}>
+          <p className="text-gray-500 font-medium mb-2 md:mb-4 text-xs md:text-sm">Hadir Hari Ini</p>
+          <p className="font-black text-[#1C3D3F] text-5xl md:text-7xl leading-none">
             {loading ? "..." : presentToday}
           </p>
         </div>
         <div
-          className="bg-white rounded-2xl shadow-xs p-8 flex flex-col items-center border border-gray-100/50"
+          className="bg-white rounded-2xl shadow-xs p-6 md:p-8 flex flex-col items-center border border-gray-100/50"
           style={{ borderTop: `5px solid ${AMBER}` }}
         >
-          <p className="text-gray-500 font-medium mb-4 text-sm">Belum Hadir</p>
-          <p className="font-black text-[#1C3D3F]" style={{ fontSize: 72, lineHeight: 1 }}>
+          <p className="text-gray-500 font-medium mb-2 md:mb-4 text-xs md:text-sm">Belum Hadir</p>
+          <p className="font-black text-[#1C3D3F] text-5xl md:text-7xl leading-none">
             {loading ? "..." : absentToday}
           </p>
         </div>

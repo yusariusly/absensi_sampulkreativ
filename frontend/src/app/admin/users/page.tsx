@@ -259,7 +259,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="flex-1 bg-[#F0F2F5] p-6 md:p-10 select-none relative">
+    <div className="flex-1 bg-[#F0F2F5] p-4 md:p-8 select-none relative">
       {/* Toast Alert Notification */}
       {notification && (
         <div className="fixed top-4 right-4 z-50 p-4 bg-[#1C3D3F] text-white rounded-xl shadow-lg border border-[#2AB0B2]/30 flex items-center gap-2 font-medium text-sm transition-all animate-bounce">
@@ -269,8 +269,8 @@ export default function AdminUsersPage() {
       )}
 
       {/* Header section */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-[#1C3D3F]">Manajemen Pengguna</h1>
+      <div className="flex items-center justify-between mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#1C3D3F]">Manajemen Pengguna</h1>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

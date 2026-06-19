@@ -139,7 +139,7 @@ export default function AdminDataPage() {
   };
 
   return (
-    <div className="flex-1 bg-[#F0F2F5] p-6 md:p-10 select-none relative">
+    <div className="flex-1 bg-[#F0F2F5] p-4 md:p-8 select-none relative">
       {/* Photo View Modal Overlay */}
       {selectedPhoto && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
@@ -152,8 +152,8 @@ export default function AdminDataPage() {
                   <div className="w-16 h-16 rounded-full bg-[#2AB0B2]/10 flex items-center justify-center text-[#2AB0B2] mb-4">
                     <Send size={32} strokeWidth={2} />
                   </div>
-                  <p className="font-bold text-gray-750 text-sm text-gray-700">Foto Dikirim ke Telegram</p>
-                  <p className="text-xs text-gray-450 mt-1.5 leading-relaxed">
+                  <p className="font-bold text-gray-755 text-sm text-gray-700">Foto Dikirim ke Telegram</p>
+                  <p className="text-xs text-gray-455 mt-1.5 leading-relaxed">
                     Sesuai pengaturan sistem, foto selfie kehadiran ini langsung diteruskan ke Telegram grup dan tidak disimpan di storage server.
                   </p>
                 </>
@@ -178,25 +178,25 @@ export default function AdminDataPage() {
       )}
 
       {/* Header bar with controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-[#1C3D3F]">Data Absensi</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#1C3D3F]">Data Absensi</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
           {/* Search bar */}
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 w-full md:w-60 shadow-xs">
-            <Search size={16} className="text-gray-400" />
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 w-full sm:w-60 shadow-xs">
+            <Search size={16} className="text-gray-400 flex-shrink-0" />
             <input
               type="text"
               placeholder="Cari nama / status..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 outline-none text-sm text-gray-500 bg-transparent"
+              className="flex-1 outline-none text-sm text-gray-500 bg-transparent min-w-0"
             />
           </div>
 
           {/* Date Selector with Previous/Next controls */}
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-xs">
+          <div className="flex items-center justify-between sm:justify-start gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-xs w-full sm:w-auto">
             <button
               onClick={handlePrevDay}
               className="p-2 text-gray-500 hover:text-[#2AB0B2] hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
@@ -206,13 +206,13 @@ export default function AdminDataPage() {
             </button>
             
             <div className="flex items-center gap-1.5 px-2">
-              <Calendar size={14} className="text-[#2AB0B2]" />
+              <Calendar size={14} className="text-[#2AB0B2] flex-shrink-0" />
               <input
                 type="date"
                 value={selectedDate}
                 max={getLocalDateString(new Date())}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="outline-none text-sm font-semibold text-gray-750 bg-transparent border-0 cursor-pointer"
+                className="outline-none text-sm font-semibold text-gray-750 bg-transparent border-0 cursor-pointer w-28 sm:w-auto"
               />
             </div>
 
@@ -230,7 +230,7 @@ export default function AdminDataPage() {
           <button
             onClick={handleExportCSV}
             disabled={filteredRows.length === 0}
-            className="flex items-center justify-center gap-2 bg-[#2AB0B2] text-white rounded-xl px-4 py-2.5 text-sm font-semibold shadow-xs hover:bg-[#209092] transition-colors cursor-pointer w-full md:w-auto disabled:opacity-50"
+            className="flex items-center justify-center gap-2 bg-[#2AB0B2] text-white rounded-xl px-4 py-2.5 text-sm font-semibold shadow-xs hover:bg-[#209092] transition-colors cursor-pointer w-full sm:w-auto disabled:opacity-50"
           >
             <Download size={16} />
             <span>Ekspor Laporan (CSV)</span>

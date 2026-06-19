@@ -170,7 +170,7 @@ export default function AdminQRPage() {
     : "";
 
   return (
-    <div className="flex-1 bg-[#F0F2F5] p-6 md:p-10 select-none print:bg-white print:p-0">
+    <div className="flex-1 bg-[#F0F2F5] p-4 md:p-8 select-none print:bg-white print:p-0">
       {/* Printable Area only */}
       <div className="hidden print:flex print-container flex-col items-center justify-center text-center p-8 bg-white">
         <h1 className="text-3xl font-extrabold text-[#1C3D3F] mb-1">
@@ -213,9 +213,9 @@ export default function AdminQRPage() {
 
       {/* Main dashboard view */}
       <div className="print:hidden">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-[#1C3D3F]">Generate QR Code</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#1C3D3F]">Generate QR Code</h1>
             <p className="text-gray-400 text-sm mt-1">Buat kode QR kehadiran statis untuk ditempel di lokasi kantor</p>
           </div>
         </div>
