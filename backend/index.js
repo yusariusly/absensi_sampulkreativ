@@ -3,6 +3,7 @@ const mysql = require('pg');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
@@ -18,6 +19,75 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 app.use('/uploads', express.static(uploadDir));
+
+async function sendAttendanceEmail({ senderName, status, reason, filePath, fileName }) {
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT || 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const to = process.env.SMTP_TO;
+
+  if (!host || !user || !pass || !to) {
+    console.warn("⚠️ SMTP Credentials are not configured in .env. Email logging fallback:");
+    console.log(`[Email Sent Mock]
+To: ${to || 'Admin'}
+From: ${senderName} <${user || 'system@absensi.com'}>
+Subject: Pengajuan ${status} - ${senderName}
+Body: Saya izin ${status.toLowerCase()} ${status === 'Sakit' ? 'karena sakit' : `dengan alasan: ${reason}`}. Berikut terlampir buktinya.
+Attachment: ${filePath || 'None'}`);
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port: parseInt(port),
+    secure: parseInt(port) === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const subject = `[Absensi] Pengajuan Izin ${status} - ${senderName}`;
+  let text = '';
+  
+  if (status === 'Sakit') {
+    text = `Yth. Administrator,
+
+Dengan ini saya memberitahukan bahwa saya (atas nama ${senderName}) mengajukan izin Sakit pada hari ini. 
+Berikut saya lampirkan surat keterangan sakit dari dokter.
+
+Terima kasih.`;
+  } else {
+    text = `Yth. Administrator,
+
+Dengan ini saya memberitahukan bahwa saya (atas nama ${senderName}) mengajukan izin cuti/keperluan dengan alasan:
+"${reason}"
+
+Berikut saya lampirkan foto/dokumen pendukung.
+
+Terima kasih.`;
+  }
+
+  const attachments = [];
+  if (filePath && fs.existsSync(filePath)) {
+    attachments.push({
+      filename: fileName || 'lampiran.jpg',
+      path: filePath,
+    });
+  }
+
+  const mailOptions = {
+    from: `"${senderName}" <${user}>`,
+    to,
+    subject,
+    text,
+    attachments,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log(`📧 Email pengajuan ${status} berhasil dikirim ke ${to}`);
+}
 
 const pgPool = new mysql.Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/absensi_db',
@@ -733,11 +803,11 @@ app.post('/api/attendance', async (req, res) => {
           fileBuffer = Buffer.from(matches[2], 'base64');
           filename = `selfie-${user.username}-${Date.now()}.${extension}`;
 
-          if (hasTelegram) {
+          if (hasTelegram && status !== 'Sakit' && status !== 'Izin') {
             // Telegram is configured: do NOT save to local storage
             fotoUrl = 'telegram';
           } else {
-            // Fallback to local storage if Telegram is not configured
+            // Fallback to local storage
             const filepath = path.join(uploadDir, filename);
             fs.writeFileSync(filepath, fileBuffer);
             fotoUrl = `/uploads/${filename}`;
@@ -777,6 +847,19 @@ app.post('/api/attendance', async (req, res) => {
         newRecord.diubah_oleh_admin
       ]
     );
+
+    // Send email for Sakit/Izin
+    if (status === 'Sakit' || status === 'Izin') {
+      const reason = req.body.reason || '';
+      const localFilePath = fileBuffer ? path.join(uploadDir, filename) : null;
+      sendAttendanceEmail({
+        senderName: user.nama_lengkap,
+        status: status,
+        reason: reason,
+        filePath: localFilePath,
+        fileName: filename
+      }).catch(err => console.error("Gagal mengirim email absensi:", err));
+    }
 
     // Trigger Telegram Notification in background with in-memory buffer if present
     triggerTelegramNotification(newRecord, fileBuffer, filename).catch(err => console.error("Error triggering telegram notification:", err));

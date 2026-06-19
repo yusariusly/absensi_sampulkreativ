@@ -178,9 +178,9 @@ export default function LoginPage() {
 
                     const hasClockedOut = todayLogs.some((log: any) => log.status === "Pulang");
                     const hasClockedIn = todayLogs.some((log: any) => log.status === "Hadir" || log.status === "Terlambat");
+                    const hasIzinSakit = todayLogs.some((log: any) => log.status === "Izin" || log.status === "Sakit");
 
-                    if (hasClockedOut) {
-                      localStorage.setItem("v2_clockOutDate", todayStart.toDateString());
+                    if (hasIzinSakit || hasClockedOut) {
                       router.replace("/user");
                       return;
                     } else if (hasClockedIn) {
