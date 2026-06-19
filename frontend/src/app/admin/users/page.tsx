@@ -399,19 +399,7 @@ export default function AdminUsersPage() {
             </div>
             
             <form onSubmit={handleSaveUser} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">
-                  Role Akses
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-600 bg-white transition-colors cursor-pointer"
-                >
-                  <option>User</option>
-                  <option>Admin</option>
-                </select>
-              </div>
+
 
               <div>
                 <input
