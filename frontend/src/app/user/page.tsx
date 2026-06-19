@@ -205,6 +205,8 @@ export default function UserHomePage() {
         console.warn("GPS tidak didapatkan untuk pengajuan");
       }
 
+      const deviceId = localStorage.getItem("v2_device_id") || "";
+
       const res = await fetch("/api/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -214,7 +216,8 @@ export default function UserHomePage() {
           latitude: lat ? String(lat) : null,
           longitude: lng ? String(lng) : null,
           status: modalType,
-          reason: reason
+          reason: reason,
+          device_id: deviceId
         })
       });
 
