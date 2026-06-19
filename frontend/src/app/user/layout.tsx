@@ -92,12 +92,8 @@ export default function UserLayout({
 
         {/* Bottom Nav Bar */}
         {isBaseScreen && (
-          <div className="flex flex-col select-none">
-            <p className="text-[10px] text-gray-400 text-center py-2 bg-white border-t border-gray-100/60 select-none">
-              © 2026 sampulkreativ · Absensi · All rights reserved
-            </p>
-            <nav className="flex bg-white border-t border-gray-100 shadow-md pb-safe flex-shrink-0">
-              <Link
+          <nav className="flex bg-white border-t border-gray-100 shadow-md pb-safe flex-shrink-0 select-none">
+            <Link
               href="/user"
               className="flex-1 flex flex-col items-center py-3.5 gap-0.5 hover:bg-gray-50/50 transition-colors"
             >
@@ -136,7 +132,6 @@ export default function UserLayout({
               </span>
             </Link>
           </nav>
-          </div>
         )}
       </div>
     </div>

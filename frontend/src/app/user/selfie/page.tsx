@@ -27,7 +27,35 @@ export default function SelfiePage() {
         return;
       }
 
+      // Check if already clocked in today via LocalStorage
+      const todayStr = new Date().toDateString();
+      const lastClockInDate = localStorage.getItem("v2_clockInDate");
+      if (lastClockInDate === todayStr) {
+        router.replace("/user");
+        return;
+      }
+
       try {
+        // Also fetch to check online logs in case localStorage was cleared
+        const storedUser = localStorage.getItem("v2_user");
+        if (storedUser) {
+          const userObj = JSON.parse(storedUser);
+          const attnRes = await fetch(`/api/attendance?user_id=${userObj.id}`);
+          if (attnRes.ok) {
+            const logs = await attnRes.json();
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            const todayLog = logs.find(
+              (log: any) => new Date(log.waktu_absen).getTime() >= todayStart.getTime()
+            );
+            if (todayLog) {
+              localStorage.setItem("v2_clockInDate", todayStr);
+              router.replace("/user");
+              return;
+            }
+          }
+        }
+
         const res = await fetch("/api/qr");
         if (res.ok) {
           const data = await res.json();
@@ -163,6 +191,7 @@ export default function SelfiePage() {
       const hh = String(now.getHours()).padStart(2, "0");
       const mm = String(now.getMinutes()).padStart(2, "0");
       localStorage.setItem("v2_clockInTime", `${hh}:${mm}`);
+      localStorage.setItem("v2_clockInDate", now.toDateString());
       if (coords && coords.lat !== null && coords.lng !== null) {
         localStorage.setItem("v2_clockInCoords", `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
       } else {

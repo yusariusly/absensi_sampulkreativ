@@ -113,6 +113,11 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
+      {!loading && (
+        <p className="text-[10px] text-gray-400 text-center py-4 select-none">
+          © 2026 sampulkreativ · Absensi SK · All rights reserved
+        </p>
+      )}
     </div>
   );
 }

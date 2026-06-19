@@ -165,6 +165,24 @@ export default function LoginPage() {
             if (data.user.is_active === 1) {
               const activeToken = token || sessionStorage.getItem("v2_scanned_token");
               if (activeToken) {
+                try {
+                  const attnRes = await fetch(`/api/attendance?user_id=${data.user.id}`);
+                  if (attnRes.ok) {
+                    const logs = await attnRes.json();
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+                    const todayLog = logs.find(
+                      (log: any) => new Date(log.waktu_absen).getTime() >= todayStart.getTime()
+                    );
+                    if (todayLog) {
+                      localStorage.setItem("v2_clockInDate", todayStart.toDateString());
+                      router.replace("/user");
+                      return;
+                    }
+                  }
+                } catch (e) {
+                  console.error("Gagal memeriksa status absensi:", e);
+                }
                 router.replace("/user/selfie");
               } else {
                 router.replace("/user");
@@ -191,7 +209,13 @@ export default function LoginPage() {
             if (parsed.is_active === 1) {
               const activeToken = token || sessionStorage.getItem("v2_scanned_token");
               if (activeToken) {
-                router.replace("/user/selfie");
+                const todayStr = new Date().toDateString();
+                const lastClockInDate = localStorage.getItem("v2_clockInDate");
+                if (lastClockInDate === todayStr) {
+                  router.replace("/user");
+                } else {
+                  router.replace("/user/selfie");
+                }
               } else {
                 router.replace("/user");
               }
@@ -440,7 +464,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-xs text-white/50 relative z-10 select-none">
-          © 2026 sampulkreativ · Absensi · All Rights Reserved.
+          © 2026 sampulkreativ · Absensi SK · All Rights Reserved.
         </div>
       </div>
 
@@ -580,7 +604,7 @@ export default function LoginPage() {
           )}
 
           <p className="lg:hidden text-[11px] text-gray-400 mt-8 text-center select-none">
-            © 2026 sampulkreativ · Absensi · All rights reserved
+            © 2026 sampulkreativ · Absensi SK · All rights reserved
           </p>
         </div>
       </div>
