@@ -21,14 +21,28 @@ if (!fs.existsSync(uploadDir)) {
 app.use('/uploads', express.static(uploadDir));
 
 async function sendAttendanceEmail({ senderName, status, reason, filePath, fileName }) {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT || 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const to = process.env.SMTP_TO;
+  // Query settings from DB using raw pgPool since pool is not hoisted yet
+  let host = process.env.SMTP_HOST;
+  let port = process.env.SMTP_PORT || 587;
+  let user = process.env.SMTP_USER;
+  let pass = process.env.SMTP_PASS;
+  let to = process.env.SMTP_TO;
+
+  try {
+    const res = await pgPool.query("SELECT key_name, key_value FROM settings WHERE key_name IN ('smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_to')");
+    res.rows.forEach(row => {
+      if (row.key_name === 'smtp_host' && row.key_value.trim() !== '') host = row.key_value;
+      if (row.key_name === 'smtp_port' && row.key_value.trim() !== '') port = row.key_value;
+      if (row.key_name === 'smtp_user' && row.key_value.trim() !== '') user = row.key_value;
+      if (row.key_name === 'smtp_pass' && row.key_value.trim() !== '') pass = row.key_value;
+      if (row.key_name === 'smtp_to' && row.key_value.trim() !== '') to = row.key_value;
+    });
+  } catch (err) {
+    console.error("Gagal memuat SMTP dari settings database, menggunakan env:", err);
+  }
 
   if (!host || !user || !pass || !to) {
-    console.warn("⚠️ SMTP Credentials are not configured in .env. Email logging fallback:");
+    console.warn("⚠️ SMTP Credentials are not configured in settings/env. Email logging fallback:");
     console.log(`[Email Sent Mock]
 To: ${to || 'Admin'}
 From: ${senderName} <${user || 'system@absensi.com'}>
@@ -248,6 +262,11 @@ async function initDb() {
     await pool.query("INSERT INTO settings (key_name, key_value) VALUES ('checkout_time', '17:00') ON DUPLICATE KEY UPDATE key_value = key_value");
     await pool.query("INSERT INTO settings (key_name, key_value) VALUES ('telegram_bot_token', '') ON DUPLICATE KEY UPDATE key_value = key_value");
     await pool.query("INSERT INTO settings (key_name, key_value) VALUES ('telegram_chat_id', '') ON DUPLICATE KEY UPDATE key_value = key_value");
+    await pool.query("INSERT INTO settings (key_name, key_value) VALUES ('smtp_host', '') ON DUPLICATE KEY UPDATE key_value = key_value");
+    await pool.query("INSERT INTO settings (key_name, key_value) VALUES ('smtp_port', '587') ON DUPLICATE KEY UPDATE key_value = key_value");
+    await pool.query("INSERT INTO settings (key_name, key_value) VALUES ('smtp_user', '') ON DUPLICATE KEY UPDATE key_value = key_value");
+    await pool.query("INSERT INTO settings (key_name, key_value) VALUES ('smtp_pass', '') ON DUPLICATE KEY UPDATE key_value = key_value");
+    await pool.query("INSERT INTO settings (key_name, key_value) VALUES ('smtp_to', '') ON DUPLICATE KEY UPDATE key_value = key_value");
 
     // 4. Seed default QR if empty
     const [qrRows] = await pool.query("SELECT COUNT(*) as cnt FROM qr_token");
@@ -1083,6 +1102,11 @@ app.get('/api/settings', async (req, res) => {
       office_longitude: '',
       telegram_bot_token: '',
       telegram_chat_id: '',
+      smtp_host: '',
+      smtp_port: '587',
+      smtp_user: '',
+      smtp_pass: '',
+      smtp_to: '',
     };
     rows.forEach(row => {
       settings[row.key_name] = row.key_value;
@@ -1095,7 +1119,19 @@ app.get('/api/settings', async (req, res) => {
 
 app.post('/api/settings', async (req, res) => {
   try {
-    const { deadline_time, checkout_time, office_latitude, office_longitude, telegram_bot_token, telegram_chat_id } = req.body;
+    const { 
+      deadline_time, 
+      checkout_time, 
+      office_latitude, 
+      office_longitude, 
+      telegram_bot_token, 
+      telegram_chat_id,
+      smtp_host,
+      smtp_port,
+      smtp_user,
+      smtp_pass,
+      smtp_to
+    } = req.body;
     
     if (deadline_time) {
       if (!/^\d{2}:\d{2}$/.test(deadline_time)) {
@@ -1151,7 +1187,62 @@ app.post('/api/settings', async (req, res) => {
       );
     }
 
-    res.json({ success: true, settings: { deadline_time, checkout_time, office_latitude, office_longitude, telegram_bot_token, telegram_chat_id } });
+    if (smtp_host !== undefined) {
+      const val = smtp_host.toString().trim();
+      await pool.query(
+        "INSERT INTO settings (key_name, key_value) VALUES ('smtp_host', ?) ON DUPLICATE KEY UPDATE key_value = ?",
+        [val, val]
+      );
+    }
+
+    if (smtp_port !== undefined) {
+      const val = smtp_port.toString().trim();
+      await pool.query(
+        "INSERT INTO settings (key_name, key_value) VALUES ('smtp_port', ?) ON DUPLICATE KEY UPDATE key_value = ?",
+        [val, val]
+      );
+    }
+
+    if (smtp_user !== undefined) {
+      const val = smtp_user.toString().trim();
+      await pool.query(
+        "INSERT INTO settings (key_name, key_value) VALUES ('smtp_user', ?) ON DUPLICATE KEY UPDATE key_value = ?",
+        [val, val]
+      );
+    }
+
+    if (smtp_pass !== undefined) {
+      const val = smtp_pass.toString().trim();
+      await pool.query(
+        "INSERT INTO settings (key_name, key_value) VALUES ('smtp_pass', ?) ON DUPLICATE KEY UPDATE key_value = ?",
+        [val, val]
+      );
+    }
+
+    if (smtp_to !== undefined) {
+      const val = smtp_to.toString().trim();
+      await pool.query(
+        "INSERT INTO settings (key_name, key_value) VALUES ('smtp_to', ?) ON DUPLICATE KEY UPDATE key_value = ?",
+        [val, val]
+      );
+    }
+
+    res.json({ 
+      success: true, 
+      settings: { 
+        deadline_time, 
+        checkout_time, 
+        office_latitude, 
+        office_longitude, 
+        telegram_bot_token, 
+        telegram_chat_id,
+        smtp_host,
+        smtp_port,
+        smtp_user,
+        smtp_pass,
+        smtp_to
+      } 
+    });
   } catch (error) {
     res.status(500).json({ error: 'Gagal menyimpan pengaturan' });
   }

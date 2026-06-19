@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Settings, Clock, CheckCircle2, Save, MapPin, Send } from "lucide-react";
+import { Settings, Clock, CheckCircle2, Save, MapPin, Send, Mail } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const [deadlineTime, setDeadlineTime] = useState("08:30");
@@ -10,6 +10,14 @@ export default function AdminSettingsPage() {
   const [officeLongitude, setOfficeLongitude] = useState("");
   const [telegramBotToken, setTelegramBotToken] = useState("");
   const [telegramChatId, setTelegramChatId] = useState("");
+
+  // SMTP state
+  const [smtpHost, setSmtpHost] = useState("");
+  const [smtpPort, setSmtpPort] = useState("587");
+  const [smtpUser, setSmtpUser] = useState("");
+  const [smtpPass, setSmtpPass] = useState("");
+  const [smtpTo, setSmtpTo] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState("");
@@ -36,6 +44,21 @@ export default function AdminSettingsPage() {
         }
         if (data.telegram_chat_id !== undefined) {
           setTelegramChatId(data.telegram_chat_id);
+        }
+        if (data.smtp_host !== undefined) {
+          setSmtpHost(data.smtp_host);
+        }
+        if (data.smtp_port !== undefined) {
+          setSmtpPort(data.smtp_port);
+        }
+        if (data.smtp_user !== undefined) {
+          setSmtpUser(data.smtp_user);
+        }
+        if (data.smtp_pass !== undefined) {
+          setSmtpPass(data.smtp_pass);
+        }
+        if (data.smtp_to !== undefined) {
+          setSmtpTo(data.smtp_to);
         }
       }
     } catch (err) {
@@ -70,7 +93,12 @@ export default function AdminSettingsPage() {
           office_latitude: officeLatitude,
           office_longitude: officeLongitude,
           telegram_bot_token: telegramBotToken,
-          telegram_chat_id: telegramChatId
+          telegram_chat_id: telegramChatId,
+          smtp_host: smtpHost,
+          smtp_port: smtpPort,
+          smtp_user: smtpUser,
+          smtp_pass: smtpPass,
+          smtp_to: smtpTo
         }),
       });
 
@@ -102,7 +130,7 @@ export default function AdminSettingsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-[#1C3D3F]">Pengaturan Sistem</h1>
-          <p className="text-gray-400 text-sm mt-1">Konfigurasi lokasi koordinat kantor dan integrasi notifikasi Telegram</p>
+          <p className="text-gray-400 text-sm mt-1">Konfigurasi lokasi koordinat kantor dan integrasi notifikasi Telegram / Email</p>
         </div>
       </div>
 
@@ -123,7 +151,7 @@ export default function AdminSettingsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-750 mb-2 text-gray-700">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Latitude Kantor
                   </label>
                   <input
@@ -135,7 +163,7 @@ export default function AdminSettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-755 mb-2 text-gray-700">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Longitude Kantor
                   </label>
                   <input
@@ -187,6 +215,84 @@ export default function AdminSettingsPage() {
                 Kosongkan token dan chat ID di atas untuk menonaktifkan notifikasi Telegram. Jika diisi, setiap kali karyawan absen masuk, detail nama, status, waktu, lokasi GPS, beserta <strong>foto selfie</strong> mereka akan langsung dikirimkan ke Telegram secara otomatis.
               </p>
 
+              {/* SMTP / Email Integration Section */}
+              <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-4 pt-4">
+                <Mail size={22} className="text-[#2AB0B2]" />
+                <h3 className="font-bold text-gray-800 text-lg">Integrasi Notifikasi Email (SMTP)</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      SMTP Host (Layanan Email)
+                    </label>
+                    <input
+                      type="text"
+                      value={smtpHost}
+                      onChange={(e) => setSmtpHost(e.target.value)}
+                      placeholder="Contoh: smtp.gmail.com"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 font-semibold bg-gray-50 focus:bg-white transition-all text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      SMTP Port
+                    </label>
+                    <input
+                      type="text"
+                      value={smtpPort}
+                      onChange={(e) => setSmtpPort(e.target.value)}
+                      placeholder="Contoh: 587"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 font-semibold bg-gray-50 focus:bg-white transition-all text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      SMTP Username / Email Pengirim
+                    </label>
+                    <input
+                      type="text"
+                      value={smtpUser}
+                      onChange={(e) => setSmtpUser(e.target.value)}
+                      placeholder="Contoh: pengirim@gmail.com"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 font-semibold bg-gray-50 focus:bg-white transition-all text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      SMTP Password / App Password
+                    </label>
+                    <input
+                      type="password"
+                      value={smtpPass}
+                      onChange={(e) => setSmtpPass(e.target.value)}
+                      placeholder="Masukkan Password Aplikasi"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 font-semibold bg-gray-50 focus:bg-white transition-all text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Penerima Laporan (Admin / HRD)
+                  </label>
+                  <input
+                    type="text"
+                    value={smtpTo}
+                    onChange={(e) => setSmtpTo(e.target.value)}
+                    placeholder="Contoh: admin@perusahaan.com"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 font-semibold bg-gray-50 focus:bg-white transition-all text-sm"
+                  />
+                </div>
+              </div>
+              <p className="text-gray-400 text-xs leading-relaxed">
+                Konfigurasi di atas digunakan untuk mengirim email pemberitahuan izin dan sakit. Nama pengirim email akan disesuaikan otomatis dengan nama karyawan yang mengajukan izin/sakit.
+              </p>
+
               <div className="pt-4 border-t border-gray-100">
                 <button
                   type="submit"
@@ -214,6 +320,9 @@ export default function AdminSettingsPage() {
           </p>
           <p className="leading-relaxed">
             • <strong>Generator Otomatis Status Alpa</strong>: Setiap kali pengguna memuat beranda mereka pada hari baru, sistem akan mendeteksi hari-hari yang terlewat dan secara otomatis mengisi status kehadiran mereka sebagai <strong>Alpa</strong>.
+          </p>
+          <p className="leading-relaxed">
+            • <strong>Notifikasi Email Izin & Sakit</strong>: Jika konfigurasi SMTP diisi, semua permohonan izin/sakit akan otomatis dikirimkan ke email tujuan beserta lampiran dokumennya.
           </p>
         </div>
       </div>
