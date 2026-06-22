@@ -1024,8 +1024,8 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users', async (req, res) => {
   try {
-    const { id, nama_lengkap, username, password, role, is_active } = req.body;
-    if (!id || !nama_lengkap || !username || !role) {
+    const { id, nama_lengkap, username, password, is_active } = req.body;
+    if (!id || !nama_lengkap || !username) {
       return res.status(400).json({ error: 'Data update tidak lengkap' });
     }
 
@@ -1035,13 +1035,14 @@ app.put('/api/users', async (req, res) => {
     }
     const user = userRows[0];
 
+    // Role is permanently locked after account creation — cannot be changed
     const [dupRows] = await pool.query('SELECT * FROM users WHERE id != ? AND LOWER(username) = ?', [id, username.trim().toLowerCase()]);
     if (dupRows.length > 0) {
-      return res.status(400).json({ error: 'Username sudah digunakan oleh akun lain' });
+      return res.status(400).json({ error: 'Username/nomor HP sudah digunakan oleh akun lain' });
     }
 
-    let updateFields = 'nama_lengkap = ?, username = ?, role = ?';
-    let params = [nama_lengkap.trim(), username.trim().toLowerCase(), role.toLowerCase() === 'admin' ? 'admin' : 'user'];
+    let updateFields = 'nama_lengkap = ?, username = ?';
+    let params = [nama_lengkap.trim(), username.trim().toLowerCase()];
 
     if (is_active !== undefined) {
       if (user.username === 'admin' && !is_active) {
@@ -1051,15 +1052,14 @@ app.put('/api/users', async (req, res) => {
       params.push(is_active ? 1 : 0);
     }
 
-    if (password && password.trim() !== '') {
+    if (password && password.trim() !== '' && password !== 'no_password') {
       updateFields += ', password = ?';
       params.push(password);
     }
 
-    updateFields += ' WHERE id = ?';
     params.push(id);
 
-    await pool.query(`UPDATE users SET ${updateFields}`, params);
+    await pool.query(`UPDATE users SET ${updateFields} WHERE id = ?`, params);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Gagal memperbarui pengguna' });

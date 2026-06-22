@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Plus, Edit2, Trash2, CheckCircle2, X, User, Smartphone, Check } from "lucide-react";
+import { Plus, Edit2, Trash2, CheckCircle2, X, User, Smartphone, Check, ShieldCheck, Users } from "lucide-react";
 
 const ROLE_STYLE: Record<string, string> = {
   pengguna: "bg-gray-100 text-gray-600",
@@ -27,10 +27,11 @@ export default function AdminUsersPage() {
 
   // Form states
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingUserRole, setEditingUserRole] = useState<string>("user");
   const [fullname, setFullname] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("User");
+  const [role, setRole] = useState<"Admin" | "User">("User");
   const [isActive, setIsActive] = useState(true);
 
   // Override states
@@ -74,16 +75,13 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-
-    // Poll for new registrations/device bindings every 4 seconds
     const interval = setInterval(fetchUsers, 4000);
-
     return () => clearInterval(interval);
   }, []);
 
-
   const resetForm = () => {
     setEditingUserId(null);
+    setEditingUserRole("user");
     setFullname("");
     setUsername("");
     setPassword("");
@@ -93,64 +91,83 @@ export default function AdminUsersPage() {
 
   const handleEditTrigger = (u: UserAccount) => {
     setEditingUserId(u.id);
+    setEditingUserRole(u.role);
     setFullname(u.nama_lengkap);
     setUsername(u.username);
-    setRole(u.role === "admin" ? "Admin" : "User");
     setIsActive(u.is_active);
-    setPassword(""); // Leave password empty unless updating it
+    setPassword("");
     showToast(`✏️ Mode edit untuk "${u.nama_lengkap}" aktif`);
   };
 
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullname.trim() || !username.trim()) {
-      showToast(role.toLowerCase() === "admin" ? "⚠️ Nama lengkap dan username wajib diisi" : "⚠️ Nama lengkap dan nomor telepon wajib diisi");
+    if (!fullname.trim()) {
+      showToast("⚠️ Nama lengkap wajib diisi");
+      return;
+    }
+    if (!username.trim()) {
+      const label = (!editingUserId && role === "Admin") || (editingUserId && editingUserRole === "admin") ? "Username" : "Nomor Telepon";
+      showToast(`⚠️ ${label} wajib diisi`);
       return;
     }
 
-    const isUserRole = role.toLowerCase() === "user";
+    const isAdminRole = editingUserId
+      ? editingUserRole === "admin"
+      : role === "Admin";
 
-    if (!isUserRole && !editingUserId && !password.trim()) {
-      showToast("⚠️ Password wajib diisi untuk akun baru");
+    if (isAdminRole && !editingUserId && !password.trim()) {
+      showToast("⚠️ Password wajib diisi untuk akun admin baru");
       return;
     }
 
     try {
-      const method = editingUserId ? "PUT" : "POST";
-      const bodyPayload = editingUserId
-        ? {
-            id: editingUserId,
-            nama_lengkap: fullname.trim(),
-            username: username.trim().toLowerCase(),
-            role: role,
-            is_active: isActive,
-            password: isUserRole ? "no_password" : (password.trim() !== "" ? password : undefined),
-          }
-        : {
-            nama_lengkap: fullname.trim(),
-            username: username.trim().toLowerCase(),
-            password: isUserRole ? "no_password" : password.trim(),
-            role: role,
-          };
-
-      const res = await fetch("/api/users", {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bodyPayload),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        if (editingUserId) {
-          showToast(`✅ Akun "${fullname}" berhasil diperbarui!`);
-        } else {
-          showToast(`✅ Akun "${data.user.nama_lengkap}" berhasil dibuat!`);
+      if (editingUserId) {
+        // PUT — role is NOT sent (locked permanently)
+        const bodyPayload: any = {
+          id: editingUserId,
+          nama_lengkap: fullname.trim(),
+          username: username.trim().toLowerCase(),
+          is_active: isActive,
+        };
+        if (isAdminRole && password.trim() !== "") {
+          bodyPayload.password = password.trim();
         }
-        fetchUsers();
-        resetForm();
+
+        const res = await fetch("/api/users", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyPayload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`✅ Akun "${fullname}" berhasil diperbarui!`);
+          fetchUsers();
+          resetForm();
+        } else {
+          showToast(`⚠️ ${data.error || "Gagal menyimpan pengguna"}`);
+        }
       } else {
-        showToast(`⚠️ ${data.error || "Gagal menyimpan pengguna"}`);
+        // POST — include role
+        const bodyPayload = {
+          nama_lengkap: fullname.trim(),
+          username: username.trim().toLowerCase(),
+          password: isAdminRole ? password.trim() : "no_password",
+          role: role,
+        };
+
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyPayload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`✅ Akun "${data.user.nama_lengkap}" berhasil dibuat!`);
+          fetchUsers();
+          resetForm();
+        } else {
+          showToast(`⚠️ ${data.error || "Gagal membuat akun"}`);
+        }
       }
     } catch (err) {
       showToast("⚠️ Terjadi kesalahan koneksi server");
@@ -162,24 +179,16 @@ export default function AdminUsersPage() {
       showToast("⚠️ Silakan pilih karyawan terlebih dahulu");
       return;
     }
-
     try {
       const res = await fetch("/api/attendance/override", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: overrideUser,
-          status: overrideStatus,
-        }),
+        body: JSON.stringify({ username: overrideUser, status: overrideStatus }),
       });
-
       const data = await res.json();
-
       if (res.ok) {
         const employee = users.find((u) => u.username === overrideUser);
-        showToast(
-          `✅ Status absensi "${employee?.nama_lengkap || overrideUser}" berhasil diubah menjadi "${overrideStatus}"`
-        );
+        showToast(`✅ Status absensi "${employee?.nama_lengkap || overrideUser}" berhasil diubah menjadi "${overrideStatus}"`);
         setOverrideUser("");
       } else {
         showToast(`⚠️ ${data.error || "Gagal menerapkan override"}`);
@@ -197,12 +206,10 @@ export default function AdminUsersPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username: usr }),
         });
-
         const data = await res.json();
-
         if (res.ok) {
           showToast(`🗑️ Akun "${usr}" berhasil dihapus secara permanen`);
-          fetchUsers(); // Refresh list
+          fetchUsers();
         } else {
           showToast(`⚠️ ${data.error || "Gagal menghapus pengguna"}`);
         }
@@ -220,12 +227,10 @@ export default function AdminUsersPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username: usr }),
         });
-
         const data = await res.json();
-
         if (res.ok) {
           showToast(`🔓 Berhasil mereset perangkat terikat untuk @${usr}`);
-          fetchUsers(); // Refresh list
+          fetchUsers();
         } else {
           showToast(`⚠️ ${data.error || "Gagal mereset perangkat"}`);
         }
@@ -236,19 +241,17 @@ export default function AdminUsersPage() {
   };
 
   const handleApproveUser = async (usr: string) => {
-    if (confirm(`Apakah Anda yakin ingin menyetujui pendaftaran akun untuk @${usr}? Karyawan tersebut akan dapat langsung masuk dan melakukan absensi.`)) {
+    if (confirm(`Apakah Anda yakin ingin menyetujui pendaftaran akun untuk @${usr}?`)) {
       try {
         const res = await fetch("/api/users/approve", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username: usr }),
         });
-
         const data = await res.json();
-
         if (res.ok) {
           showToast(`✅ Akun @${usr} berhasil disetujui`);
-          fetchUsers(); // Refresh list
+          fetchUsers();
         } else {
           showToast(`⚠️ ${data.error || "Gagal menyetujui akun"}`);
         }
@@ -257,6 +260,10 @@ export default function AdminUsersPage() {
       }
     }
   };
+
+  // Determine the effective role for the current form context
+  const effectiveRole = editingUserId ? editingUserRole : role.toLowerCase();
+  const isAdminForm = effectiveRole === "admin";
 
   return (
     <div className="flex-1 bg-[#F0F2F5] p-4 md:p-8 select-none relative">
@@ -290,17 +297,16 @@ export default function AdminUsersPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-sm text-gray-400 font-medium">
+                    <td colSpan={5} className="text-center py-8 text-sm text-gray-400 font-medium">
                       Memuat daftar karyawan...
                     </td>
                   </tr>
                 ) : users.length > 0 ? (
                   users.map((u, i) => (
-                    <tr
-                      key={i}
-                      className="border-b border-gray-55 last:border-0 hover:bg-gray-50/30 transition-colors"
-                    >
-                      <td className="px-5 py-4 text-sm font-mono text-[#1C3D3F] font-semibold">{u.username.match(/^\d+$/) ? u.username : `@${u.username}`}</td>
+                    <tr key={i} className="border-b border-gray-55 last:border-0 hover:bg-gray-50/30 transition-colors">
+                      <td className="px-5 py-4 text-sm font-mono text-[#1C3D3F] font-semibold">
+                        {u.username.match(/^\d+$/) ? u.username : `@${u.username}`}
+                      </td>
                       <td className="px-5 py-4 text-sm text-gray-600 font-medium">
                         {u.nama_lengkap}
                         {!u.is_active && (
@@ -310,11 +316,7 @@ export default function AdminUsersPage() {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className={`px-2.5 py-1 rounded text-xs font-semibold capitalize ${
-                            ROLE_STYLE[u.role.toLowerCase()] ?? "bg-gray-100 text-gray-600"
-                          }`}
-                        >
+                        <span className={`px-2.5 py-1 rounded text-xs font-semibold capitalize ${ROLE_STYLE[u.role.toLowerCase()] ?? "bg-gray-100 text-gray-600"}`}>
                           {u.role}
                         </span>
                       </td>
@@ -369,7 +371,7 @@ export default function AdminUsersPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-sm text-gray-400 font-medium">
+                    <td colSpan={5} className="text-center py-8 text-sm text-gray-400 font-medium">
                       Tidak ada data pengguna ditemukan
                     </td>
                   </tr>
@@ -385,22 +387,57 @@ export default function AdminUsersPage() {
           <div className="bg-white rounded-2xl shadow-xs p-5 border border-gray-100/50">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-800 text-sm">
-                {editingUserId ? "Edit Akun Karyawan" : "Tambah Akun Baru"}
+                {editingUserId ? `Edit Akun ${editingUserRole === "admin" ? "Admin" : "Karyawan"}` : "Tambah Akun Baru"}
               </h3>
               {editingUserId && (
-                <button
-                  onClick={resetForm}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                  title="Batalkan Edit"
-                >
+                <button onClick={resetForm} className="text-gray-400 hover:text-gray-600 cursor-pointer" title="Batalkan Edit">
                   <X size={16} />
                 </button>
               )}
             </div>
-            
+
+            {/* Role Selector — only shown when creating a new account */}
+            {!editingUserId && (
+              <div className="flex gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => { setRole("User"); setUsername(""); setPassword(""); }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
+                    role === "User"
+                      ? "bg-[#2AB0B2] text-white border-[#2AB0B2]"
+                      : "bg-white text-gray-500 border-gray-200 hover:border-[#2AB0B2] hover:text-[#2AB0B2]"
+                  }`}
+                >
+                  <Users size={15} />
+                  Karyawan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setRole("Admin"); setUsername(""); setPassword(""); }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
+                    role === "Admin"
+                      ? "bg-[#1C3D3F] text-white border-[#1C3D3F]"
+                      : "bg-white text-gray-500 border-gray-200 hover:border-[#1C3D3F] hover:text-[#1C3D3F]"
+                  }`}
+                >
+                  <ShieldCheck size={15} />
+                  Admin
+                </button>
+              </div>
+            )}
+
+            {/* Role badge when editing — just display, cannot change */}
+            {editingUserId && (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold mb-4 w-fit ${
+                editingUserRole === "admin" ? "bg-teal-50 text-teal-700" : "bg-gray-100 text-gray-600"
+              }`}>
+                {editingUserRole === "admin" ? <ShieldCheck size={13} /> : <Users size={13} />}
+                Role: {editingUserRole === "admin" ? "Admin" : "Karyawan"} · tidak dapat diubah
+              </div>
+            )}
+
             <form onSubmit={handleSaveUser} className="space-y-3">
-
-
+              {/* Nama Lengkap */}
               <div>
                 <input
                   type="text"
@@ -412,7 +449,8 @@ export default function AdminUsersPage() {
                 />
               </div>
 
-              {role.toLowerCase() === "admin" ? (
+              {/* Conditional fields by role */}
+              {isAdminForm ? (
                 <>
                   <div>
                     <input
@@ -436,23 +474,36 @@ export default function AdminUsersPage() {
                   </div>
                 </>
               ) : (
-                <>
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Nomor Telepon (HP)"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none transition-colors font-mono"
-                      required
-                    />
-                  </div>
-                </>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Nomor Telepon (HP)"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none transition-colors font-mono"
+                    required
+                  />
+                </div>
               )}
 
+              {/* Active toggle - only when editing */}
+              {editingUserId && (
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50">
+                  <span className="text-sm text-gray-600 font-medium">Status Akun</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsActive(!isActive)}
+                    className={`relative w-10 h-5 rounded-full transition-all cursor-pointer ${isActive ? "bg-[#2AB0B2]" : "bg-gray-300"}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${isActive ? "left-5.5" : "left-0.5"}`} />
+                  </button>
+                  <span className={`text-xs font-semibold ${isActive ? "text-[#2AB0B2]" : "text-gray-400"}`}>
+                    {isActive ? "Aktif" : "Nonaktif"}
+                  </span>
+                </div>
+              )}
 
-              
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-1">
                 {editingUserId && (
                   <button
                     type="button"
@@ -464,9 +515,9 @@ export default function AdminUsersPage() {
                 )}
                 <button
                   type="submit"
-                  className="flex-2 py-2.5 rounded-xl text-white text-sm font-semibold hover:bg-[#209092] transition-colors cursor-pointer bg-[#2AB0B2]"
+                  className="flex-2 w-full py-2.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-colors cursor-pointer bg-[#2AB0B2]"
                 >
-                  {editingUserId ? "Simpan" : "Simpan Akun"}
+                  {editingUserId ? "Simpan Perubahan" : `Buat Akun ${role}`}
                 </button>
               </div>
             </form>
@@ -501,7 +552,6 @@ export default function AdminUsersPage() {
                 <option>Sakit</option>
                 <option>Alpa</option>
               </select>
-              
               <button
                 onClick={handleOverrideStatus}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 transition-all hover:bg-[#F6C13B]/10 cursor-pointer text-[#F6C13B] border-[#F6C13B]"
