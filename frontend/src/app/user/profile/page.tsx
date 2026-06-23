@@ -429,19 +429,13 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Top Header */}
-                <div className="relative z-10 flex items-center justify-between px-4 pt-4 pb-2">
+                <div className="relative z-10 flex items-center justify-center px-4 pt-5 pb-2">
                   <div className="flex items-center gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
-                    <div className="leading-none">
-                      <div className="text-[7px] font-black text-white tracking-widest">SAMPULKREATIV</div>
-                      <div className="text-[4.5px] text-[#2AB0B2] tracking-widest font-bold mt-0.5">TECHNOLOGY</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div style={{background:"rgba(246,193,59,0.15)", border:"1px solid rgba(246,193,59,0.4)"}}
-                      className="px-2 py-0.5 rounded-full">
-                      <span className="text-[5.5px] font-extrabold tracking-widest uppercase" style={{color:"#F6C13B"}}>KARTU KARYAWAN</span>
+                    <img src="/logo.png" alt="Logo" className="w-6.5 h-6.5 object-contain" />
+                    <div className="leading-none text-left">
+                      <div className="text-[7.5px] font-black text-white tracking-widest">SAMPULKREATIV</div>
+                      <div className="text-[5px] text-[#2AB0B2] tracking-widest font-bold mt-0.5">TECHNOLOGY</div>
                     </div>
                   </div>
                 </div>
@@ -450,68 +444,59 @@ export default function ProfilePage() {
                 <div className="relative z-10 mx-4 h-px" style={{background:"linear-gradient(90deg,transparent,#F6C13B55,transparent)"}} />
 
                 {/* Photo + Name block */}
-                <div className="relative z-10 flex flex-col items-center mt-5 px-4">
+                <div className="relative z-10 flex flex-col items-center mt-6 px-4">
                   <div className="relative">
-                    <div className="w-[78px] h-[78px] rounded-2xl overflow-hidden flex items-center justify-center shadow-lg"
+                    <div className="w-[84px] h-[84px] rounded-2xl overflow-hidden flex items-center justify-center shadow-xl"
                       style={{border:"2.5px solid #2AB0B2", background:"#0f2d2e"}}>
                       {profilePhoto && profilePhoto !== "/uploads/placeholder.jpg" ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={profilePhoto} alt="Foto profil" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={34} className="text-gray-500" />
+                        <User size={38} className="text-gray-500" />
                       )}
                     </div>
                     {/* Status dot */}
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                    <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full flex items-center justify-center"
                       style={{background:"#2AB0B2", border:"2px solid #1C3D3F"}}>
                       <div className="w-1.5 h-1.5 rounded-full bg-white" />
                     </div>
                   </div>
 
-                  <h5 className="font-extrabold text-white text-[11px] tracking-wide mt-3 text-center leading-tight">
+                  <h5 className="font-extrabold text-white text-[12px] tracking-wide mt-3.5 text-center leading-tight">
                     {fullname}
                   </h5>
-                  <div className="mt-1.5 px-3 py-0.5 rounded-full text-[7px] font-bold tracking-wider uppercase"
+                  <div className="mt-2 px-3.5 py-0.5 rounded-full text-[7.5px] font-bold tracking-wider uppercase"
                     style={{background:"rgba(42,176,178,0.2)", border:"1px solid rgba(42,176,178,0.5)", color:"#7EDFE0"}}>
                     {jabatan}
                   </div>
                 </div>
 
                 {/* Info grid */}
-                <div className="relative z-10 mx-4 mt-4 rounded-xl overflow-hidden"
+                <div className="relative z-10 mx-4 mt-5 rounded-xl overflow-hidden"
                   style={{background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)"}}>
-                  <div className="flex justify-between items-center px-3 py-2 border-b" style={{borderColor:"rgba(255,255,255,0.07)"}}>
-                    <span className="text-[7px] font-semibold" style={{color:"rgba(255,255,255,0.45)"}}>No. Karyawan</span>
-                    <span className="text-[7.5px] font-bold font-mono text-white">{username}</span>
+                  <div className="flex justify-between items-center px-3.5 py-2.5 border-b" style={{borderColor:"rgba(255,255,255,0.07)"}}>
+                    <span className="text-[7.5px] font-semibold" style={{color:"rgba(255,255,255,0.45)"}}>No. Karyawan</span>
+                    <span className="text-[8px] font-bold font-mono text-white">{username}</span>
                   </div>
-                  <div className="flex justify-between items-center px-3 py-2">
-                    <span className="text-[7px] font-semibold" style={{color:"rgba(255,255,255,0.45)"}}>Status</span>
-                    <span className="text-[7.5px] font-bold capitalize text-white">
+                  <div className="flex justify-between items-center px-3.5 py-2.5">
+                    <span className="text-[7.5px] font-semibold" style={{color:"rgba(255,255,255,0.45)"}}>Status</span>
+                    <span className="text-[8px] font-bold capitalize text-white">
                       {userRole === "user" || userRole === "Karyawan" ? "Karyawan" : userRole === "pkl" ? "PKL / Magang" : userRole}
                     </span>
                   </div>
                 </div>
 
-                {/* QR Code */}
-                <div className="relative z-10 flex flex-col items-center mt-4">
-                  <div className="p-1.5 rounded-xl bg-white shadow-md">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&color=1c3d3f&data=${encodeURIComponent(username)}`}
-                      alt="QR Code" className="w-11 h-11"
-                    />
-                  </div>
-                  <span className="text-[5.5px] font-mono font-bold mt-1" style={{color:"rgba(255,255,255,0.35)", letterSpacing:"0.15em"}}>
-                    SCAN UNTUK ABSEN
-                  </span>
-                </div>
-
-                {/* Bottom bar */}
-                <div className="relative z-10 mt-auto">
-                  <div className="h-[3px] w-full" style={{background:"linear-gradient(90deg,#F6C13B,#EAA41D)"}} />
-                  <div className="py-1.5 text-center" style={{background:"rgba(0,0,0,0.3)"}}>
-                    <span className="text-[6px] font-bold tracking-widest uppercase" style={{color:"rgba(255,255,255,0.7)"}}>
-                      ABSENSI SK · SAMPULKREATIV
+                {/* Bottom Footer Band */}
+                <div className="w-full text-center text-white px-3 pb-5 pt-2 bg-gradient-to-t from-black/40 to-transparent z-10 mt-auto">
+                  <p className="text-[7px] font-bold tracking-wider text-gray-200 uppercase">SAMPULKREATIV TECHNOLOGY</p>
+                  <p className="text-[5px] text-gray-300 font-semibold leading-tight mt-0.5">Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521</p>
+                  <div className="flex justify-center items-center gap-1.5 mt-2.5 text-[5px] font-mono text-gray-200 font-bold border-t border-white/10 pt-2">
+                    <span className="flex items-center gap-0.5 truncate max-w-[100px]">
+                      <span className="text-[#F6C13B]">✉️</span> {email}
+                    </span>
+                    <span className="text-white/20">|</span>
+                    <span className="flex items-center gap-0.5">
+                      <span className="text-[#F6C13B]">📞</span> {noTelp}
                     </span>
                   </div>
                 </div>
