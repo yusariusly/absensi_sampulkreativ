@@ -378,11 +378,11 @@ export default function ProfilePage() {
                 <div className="absolute top-0 left-0 w-full h-[180px] bg-[#1E2022] z-0 pointer-events-none" style={{ clipPath: "polygon(0 0, 75% 0, 45% 100%, 0 100%)" }} />
                 <div className="absolute top-0 left-0 w-full h-[180px] bg-[#2A2D30]/60 z-0 pointer-events-none" style={{ clipPath: "polygon(0 0, 50% 0, 25% 100%, 0 100%)" }} />
 
-                {/* Right diagonal red stripes */}
+                {/* Right diagonal teal stripes */}
                 <div className="absolute right-0 top-[110px] flex flex-col gap-1.5 z-0 pointer-events-none">
-                  <div className="w-5 h-2.5 bg-[#DE2C2C] transform -skew-x-[25deg] translate-x-1.5" />
-                  <div className="w-6.5 h-2.5 bg-[#DE2C2C] transform -skew-x-[25deg] translate-x-1.5" />
-                  <div className="w-8 h-2.5 bg-[#DE2C2C] transform -skew-x-[25deg] translate-x-1.5" />
+                  <div className="w-5 h-2.5 bg-[#2AB0B2] transform -skew-x-[25deg] translate-x-1.5" />
+                  <div className="w-6.5 h-2.5 bg-[#2AB0B2] transform -skew-x-[25deg] translate-x-1.5" />
+                  <div className="w-8 h-2.5 bg-[#2AB0B2] transform -skew-x-[25deg] translate-x-1.5" />
                 </div>
 
                 {/* Slot punch detail at the top */}
@@ -406,7 +406,7 @@ export default function ProfilePage() {
                   <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain filter brightness-0 invert" />
                   <div className="leading-none text-left">
                     <div className="text-[10px] font-black text-white tracking-widest uppercase">SAMPULKREATIV</div>
-                    <div className="text-[6.5px] text-[#DE2C2C] tracking-widest font-black mt-0.5 uppercase">TECHNOLOGY</div>
+                    <div className="text-[6.5px] text-[#2AB0B2] tracking-widest font-black mt-0.5 uppercase">TECHNOLOGY</div>
                   </div>
                 </div>
 
@@ -414,17 +414,17 @@ export default function ProfilePage() {
                 <div className="mt-auto w-full px-4 pb-5 pt-3 z-10 flex justify-between items-end relative">
                   {/* Left Bottom: Name Banner & Designation */}
                   <div className="flex flex-col items-start text-left max-w-[130px]">
-                    <div className="bg-[#DE2C2C] text-white font-black text-[9.5px] uppercase tracking-wider pl-4 pr-3 py-1.5 rounded-r shadow-md leading-none mb-2 -ml-4">
+                    <div className="bg-[#2AB0B2] text-white font-black text-[9.5px] uppercase tracking-wider pl-4 pr-3 py-1.5 rounded-r shadow-md leading-none mb-2 -ml-4">
                       {fullname}
                     </div>
-                    <span className="text-[7.5px] font-bold text-gray-300 tracking-wider uppercase pl-0.5">
+                    <span className="text-[7.5px] font-bold text-[#F6C13B] tracking-wider uppercase pl-0.5">
                       {jabatan}
                     </span>
                   </div>
 
                   {/* Right Bottom: Address (replaces QR code) */}
                   <div className="text-right flex flex-col items-end max-w-[85px] border-l border-white/10 pl-2">
-                    <span className="text-[6.5px] font-bold text-[#DE2C2C] tracking-wider leading-none uppercase">SAMPULKREATIV</span>
+                    <span className="text-[6.5px] font-bold text-[#F6C13B] tracking-wider leading-none uppercase">SAMPULKREATIV</span>
                     <span className="text-[4.5px] text-gray-400 font-semibold leading-tight mt-1">
                       Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521
                     </span>
