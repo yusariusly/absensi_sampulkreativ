@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Camera, Printer, X, CreditCard } from "lucide-react";
+import { User, Camera, Printer, X, CreditCard, Download } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -246,19 +246,19 @@ export default function ProfilePage() {
             type="button"
             onClick={() => {
               if (!jabatan || jabatan.trim() === "" || jabatan.trim().toLowerCase() === "karyawan") {
-                setError("⚠️ Silakan isi kolom Jabatan / Keterangan Status Anda di profil terlebih dahulu sebelum mencetak kartu.");
+                setError("⚠️ Silakan isi kolom Jabatan / Keterangan Status Anda di profil terlebih dahulu sebelum mengunduh kartu.");
                 const bioCard = document.getElementById("biodata-card");
                 if (bioCard) {
                   bioCard.scrollIntoView({ behavior: "smooth" });
                 }
               } else if (!email || email.trim() === "") {
-                setError("⚠️ Silakan isi kolom Email Anda di profil terlebih dahulu sebelum mencetak kartu.");
+                setError("⚠️ Silakan isi kolom Email Anda di profil terlebih dahulu sebelum mengunduh kartu.");
                 const bioCard = document.getElementById("biodata-card");
                 if (bioCard) {
                   bioCard.scrollIntoView({ behavior: "smooth" });
                 }
               } else if (!noTelp || noTelp.trim() === "") {
-                setError("⚠️ Silakan isi kolom No. Telepon Anda di profil terlebih dahulu sebelum mencetak kartu.");
+                setError("⚠️ Silakan isi kolom No. Telepon Anda di profil terlebih dahulu sebelum mengunduh kartu.");
                 const bioCard = document.getElementById("biodata-card");
                 if (bioCard) {
                   bioCard.scrollIntoView({ behavior: "smooth" });
@@ -269,8 +269,8 @@ export default function ProfilePage() {
             }}
             className="mt-4 px-4 py-2 bg-gradient-to-r from-[#2AB0B2] to-[#209092] hover:from-[#209092] hover:to-[#1C3D3F] text-white font-bold text-xs rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
           >
-            <Printer size={13} />
-            Cetak Kartu Karyawan
+            <CreditCard size={13} />
+            Download Kartu Karyawan
           </button>
         </div>
 
@@ -566,7 +566,7 @@ export default function ProfilePage() {
 
             </div>
 
-            {/* Print Controls */}
+             {/* Print Controls */}
             <div className="w-full mt-5 flex flex-col">
               <div className="flex gap-3">
                 <button
@@ -583,14 +583,14 @@ export default function ProfilePage() {
                   }}
                   className="flex-2 py-3 text-xs font-bold text-white bg-[#2AB0B2] hover:bg-[#209092] rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
                 >
-                  <Printer size={13} />
-                  Cetak Depan & Belakang
+                  <Download size={13} />
+                  Download PDF
                 </button>
               </div>
               
               {/* Help/Tip under print button */}
               <p className="text-[9px] text-gray-400 text-center mt-3 leading-normal">
-                💡 <b>Tips PDF:</b> Pada dialog cetak browser, pilih tujuan <b>"Simpan sebagai PDF"</b> untuk mengunduh kedua halaman kartu dalam satu file dokumen.
+                💡 <b>Tips:</b> Pilih opsi <b>"Simpan sebagai PDF"</b> atau <b>"Save as PDF"</b> pada dialog cetak browser Anda untuk mengunduh file kartu karyawan.
               </p>
             </div>
           </div>
