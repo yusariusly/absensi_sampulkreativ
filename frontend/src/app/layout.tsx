@@ -16,8 +16,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Absensi SK",
-  description: "Sistem Absensi Karyawan Sampul Kreativ",
+  title: "sampulkreativ.app",
+  description: "Portal Internal Karyawan Sampul Kreativ",
   manifest: "/site.webmanifest",
   icons: {
     icon: "/favicon-32x32.png",
@@ -37,7 +37,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Absensi SK" />
+        <meta name="apple-mobile-web-app-title" content="sampulkreativ.app" />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         {children}

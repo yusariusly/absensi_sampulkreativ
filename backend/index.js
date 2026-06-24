@@ -557,7 +557,7 @@ app.post('/api/auth/login-employee', async (req, res) => {
       // If already bound to another device
       if (user.device_id !== device_id) {
         return res.status(403).json({
-          error: 'Akun ini sudah terikat pada HP lain.'
+          error: 'Akun ini sudah terikat pada perangkat lain.'
         });
       }
     } else {
@@ -615,7 +615,7 @@ app.post('/api/auth/register-device', async (req, res) => {
 
       if (user.device_id && user.device_id.trim() !== '' && user.device_id !== device_id) {
         return res.status(403).json({ 
-          error: 'Akun ini sudah terikat pada HP lain.' 
+          error: 'Akun ini sudah terikat pada perangkat lain.' 
         });
       }
 

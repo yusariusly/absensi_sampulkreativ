@@ -470,22 +470,22 @@ export default function LoginPage() {
             <AppLogo size={48} />
           </div>
           <div>
-            <h2 className="font-bold text-lg tracking-wide">Absensi SK</h2>
+            <h2 className="font-bold text-lg tracking-wide">sampulkreativ.app</h2>
             <p className="text-[10px] text-white/60 tracking-widest uppercase mt-0.5">by sampulkreativ</p>
           </div>
         </div>
 
         <div className="my-auto max-w-md space-y-4 relative z-10">
           <h1 className="text-4xl font-extrabold leading-tight">
-            Absen Cepat dengan <span className="text-[#F6C13B]">Registrasi Sekali</span> &amp; Scan QR
+            Satu Aplikasi untuk Semua <span className="text-[#F6C13B]">Kebutuhan Internal</span>
           </h1>
           <p className="text-white/80 text-sm leading-relaxed">
-            Sistem Absensi Online resmi dari SampulKreativ untuk pencatatan kehadiran karyawan yang cepat dan aman. Cukup daftarkan perangkat Anda sekali, lalu lakukan absensi harian dengan pemindaian kode QR dan verifikasi foto selfie.
+            Portal internal terintegrasi dari SampulKreativ. Cukup daftarkan perangkat Anda sekali untuk mengakses layanan absensi online, sistem payroll, dan program PKL secara aman dan praktis.
           </p>
         </div>
 
         <div className="text-xs text-white/50 relative z-10 select-none">
-          © 2026 sampulkreativ · Absensi SK · All Rights Reserved.
+          © 2026 sampulkreativ · sampulkreativ.app · All Rights Reserved.
         </div>
       </div>
 
@@ -500,7 +500,7 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <h1 className="text-3xl font-extrabold text-[#1C3D3F] mb-1.5">
-              {mode === "register" ? "Absensi Karyawan" : "Administrator"}
+              {mode === "register" ? "Portal Karyawan" : "Administrator"}
             </h1>
             <p className="text-gray-400 text-sm">
               {mode === "register" 
@@ -627,14 +627,14 @@ export default function LoginPage() {
                   }}
                   className="text-xs text-[#2AB0B2] hover:underline font-bold cursor-pointer"
                 >
-                  Kembali ke Absensi Karyawan
+                  Kembali ke Portal Karyawan
                 </button>
               </div>
             </form>
           )}
 
           <p className="lg:hidden text-[11px] text-gray-400 mt-8 text-center select-none">
-            © 2026 sampulkreativ · Absensi SK · All rights reserved
+            © 2026 sampulkreativ · sampulkreativ.app · All rights reserved
           </p>
         </div>
       </div>

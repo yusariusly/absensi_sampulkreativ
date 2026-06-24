@@ -342,7 +342,7 @@ export default function QRScanPage() {
               <div className="border-l-2 border-primary/50 pl-3">
                 <span className="font-semibold text-primary block mb-0.5 text-sm">Aplikasi Homescreen (PWA)</span>
                 <span className="text-gray-300 leading-normal">
-                  Buka <b>Pengaturan HP</b> &gt; Aplikasi &gt; <b>Absensi SK</b> &gt; Izin &gt; Aktifkan Kamera.
+                  Buka <b>Pengaturan HP</b> &gt; Aplikasi &gt; <b>sampulkreativ.app</b> &gt; Izin &gt; Aktifkan Kamera.
                 </span>
               </div>
             </div>

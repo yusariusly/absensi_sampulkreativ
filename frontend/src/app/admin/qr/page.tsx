@@ -86,10 +86,10 @@ export default function AdminQRPage() {
     ctx.fillText("QR CODE ABSENSI", canvas.width / 2, 90);
     ctx.fillText("SAMPULKREATIV", canvas.width / 2, 140);
 
-    // 3. Draw Subtitle: Scan QR Code ini menggunakan aplikasi Absensi SK
+    // 3. Draw Subtitle: Scan QR Code ini menggunakan aplikasi sampulkreativ.app
     ctx.fillStyle = "#6B7280";
     ctx.font = "500 20px sans-serif";
-    ctx.fillText("Scan QR Code ini menggunakan aplikasi Absensi SK", canvas.width / 2, 200);
+    ctx.fillText("Scan QR Code ini menggunakan aplikasi sampulkreativ.app", canvas.width / 2, 200);
 
     // 4. Load and draw QR Code Image
     const qrImg = new Image();
@@ -177,7 +177,7 @@ export default function AdminQRPage() {
           QR CODE ABSENSI
           <span className="block mt-1">SAMPULKREATIV</span>
         </h1>
-        <p className="text-gray-500 text-sm mb-8 font-medium">Scan QR Code ini menggunakan aplikasi Absensi SK</p>
+        <p className="text-gray-500 text-sm mb-8 font-medium">Scan QR Code ini menggunakan aplikasi sampulkreativ.app</p>
         
         {qrImageUrl && (
           <div className="border-[12px] border-zinc-800 p-6 rounded-[36px] bg-white shadow-xl mb-8">

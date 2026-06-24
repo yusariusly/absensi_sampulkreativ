@@ -159,7 +159,7 @@ export default function UserLayout({
             <div className="flex items-center gap-2.5">
               <AppLogo size={30} />
               <div>
-                <p className="font-extrabold text-sm leading-none text-[#1C3D3F]">Absensi SK</p>
+                <p className="font-extrabold text-sm leading-none text-[#1C3D3F]">sampulkreativ.app</p>
                 <p className="text-[9px] font-semibold text-gray-400 mt-1 uppercase tracking-wider">by sampulkreativ</p>
               </div>
             </div>

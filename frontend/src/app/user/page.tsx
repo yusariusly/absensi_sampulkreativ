@@ -504,7 +504,7 @@ export default function UserHomePage() {
 
       {/* Copyright */}
       <p className="text-[10px] text-gray-400 text-center py-2 select-none flex-shrink-0">
-        © 2026 sampulkreativ · Absensi SK · All rights reserved
+        © 2026 sampulkreativ · sampulkreativ.app · All rights reserved
       </p>
     </div>
   );
