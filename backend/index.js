@@ -495,12 +495,12 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      'SELECT * FROM users WHERE LOWER(username) = ? AND password = ? AND is_active = 1',
+      "SELECT * FROM users WHERE LOWER(username) = ? AND password = ? AND role = 'admin' AND is_active = 1",
       [username.trim().toLowerCase(), password]
     );
 
     if (rows.length === 0) {
-      return res.status(401).json({ error: 'Username atau password salah / akun tidak aktif' });
+      return res.status(401).json({ error: 'Username atau password salah' });
     }
 
     const user = rows[0];
@@ -553,12 +553,11 @@ app.post('/api/auth/login-employee', async (req, res) => {
       return res.status(403).json({ error: 'Username atau password salah' });
     }
 
-    // Device binding logic
     if (user.device_id && user.device_id.trim() !== '') {
       // If already bound to another device
       if (user.device_id !== device_id) {
         return res.status(403).json({
-          error: `Akun ini sudah terikat pada HP lain (${user.device_info || 'Perangkat lain'}). Silakan hubungi Administrator untuk mereset perangkat Anda.`
+          error: 'Akun ini sudah terikat pada HP lain.'
         });
       }
     } else {
@@ -614,10 +613,9 @@ app.post('/api/auth/register-device', async (req, res) => {
     if (existing.length > 0) {
       user = existing[0];
 
-      // Lock to device: check if device_id matches
       if (user.device_id && user.device_id.trim() !== '' && user.device_id !== device_id) {
         return res.status(403).json({ 
-          error: `Username ini sudah terikat pada HP lain (${user.device_info || 'Perangkat lain'}). Silakan hubungi Administrator untuk mereset perangkat Anda.` 
+          error: 'Akun ini sudah terikat pada HP lain.' 
         });
       }
 
