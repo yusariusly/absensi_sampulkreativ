@@ -568,12 +568,20 @@ export default function ProfilePage() {
             display: none !important;
           }
           
-          /* Reset root layout to prevent any height capping or overflow cropping */
-          #profile-page-root {
-            display: block !important;
+          /* Reset layout parent wrappers to prevent height constraints or cropping */
+          #user-layout-root,
+          #user-layout-container,
+          #profile-page-root,
+          html,
+          body {
             height: auto !important;
-            min-height: auto !important;
+            max-height: none !important;
             overflow: visible !important;
+            display: block !important;
+            width: auto !important;
+            max-width: none !important;
+            box-shadow: none !important;
+            border: none !important;
             padding: 0 !important;
             margin: 0 !important;
             background: transparent !important;

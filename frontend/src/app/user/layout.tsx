@@ -150,12 +150,12 @@ export default function UserLayout({
   }
 
   return (
-    <div className="h-[100dvh] max-h-[100dvh] bg-[#F0F2F5] flex justify-center overflow-hidden font-sans">
+    <div id="user-layout-root" className="h-[100dvh] max-h-[100dvh] bg-[#F0F2F5] flex justify-center overflow-hidden font-sans">
       {/* Centered Mobile Container */}
-      <div className="w-full max-w-md bg-[#F0F2F5] h-full max-h-full flex flex-col shadow-xs relative overflow-hidden">
+      <div id="user-layout-container" className="w-full max-w-md bg-[#F0F2F5] h-full max-h-full flex flex-col shadow-xs relative overflow-hidden">
         {/* Top Navbar */}
         {isBaseScreen && (
-          <header className="bg-white border-b border-gray-100 px-5 py-3.5 flex items-center justify-between shadow-xs select-none">
+          <header className="bg-white border-b border-gray-100 px-5 py-3.5 flex items-center justify-between shadow-xs select-none print:hidden">
             <div className="flex items-center gap-2.5">
               <AppLogo size={30} />
               <div>
@@ -182,7 +182,7 @@ export default function UserLayout({
 
         {/* Bottom Nav Bar */}
         {isBaseScreen && (
-          <nav className="flex bg-white border-t border-gray-100 shadow-md pb-safe flex-shrink-0 select-none">
+          <nav className="flex bg-white border-t border-gray-100 shadow-md pb-safe flex-shrink-0 select-none print:hidden">
             <Link
               href="/user"
               className="flex-1 flex flex-col items-center py-3.5 gap-0.5 hover:bg-gray-50/50 transition-colors"
