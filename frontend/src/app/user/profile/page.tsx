@@ -26,6 +26,8 @@ export default function ProfilePage() {
   const [jabatan, setJabatan] = useState("Karyawan");
   const [userRole, setUserRole] = useState("Karyawan");
   const [kategori, setKategori] = useState("Karyawan");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -157,6 +159,12 @@ export default function ProfilePage() {
     setSuccessMsg("");
     setLoading(true);
 
+    if (newPassword && newPassword !== confirmPassword) {
+      setError("⚠️ Konfirmasi password baru tidak cocok!");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/users/update-bio", {
         method: "POST",
@@ -166,10 +174,10 @@ export default function ProfilePage() {
           tanggal_lahir: tanggalLahir,
           gender: gender,
           alamat: alamat,
-          jabatan: jabatan,
           email: email,
           no_telp: noTelp,
-          kategori: kategori
+          kategori: kategori,
+          password: newPassword || undefined
         }),
       });
 
@@ -177,6 +185,8 @@ export default function ProfilePage() {
 
       if (res.ok && data.success) {
         setSuccessMsg("Biodata berhasil diperbarui!");
+        setNewPassword("");
+        setConfirmPassword("");
         setSubmitted(true);
         
         // Update local storage
@@ -252,7 +262,7 @@ export default function ProfilePage() {
             type="button"
             onClick={() => {
               if (!jabatan || jabatan.trim() === "" || jabatan.trim().toLowerCase() === "karyawan") {
-                setError("⚠️ Silakan isi kolom Jabatan / Keterangan Status Anda di profil terlebih dahulu sebelum mengunduh kartu.");
+                setError("⚠️ Jabatan Anda belum ditentukan oleh Administrator. Silakan hubungi Administrator.");
                 const bioCard = document.getElementById("biodata-card");
                 if (bioCard) {
                   bioCard.scrollIntoView({ behavior: "smooth" });
@@ -328,21 +338,6 @@ export default function ProfilePage() {
 
             <div>
               <label className="block text-xs text-gray-500 uppercase font-bold tracking-wider mb-1.5 flex justify-between items-center">
-                <span>Jabatan</span>
-                <span className="text-[10px] text-red-500 font-bold lowercase tracking-normal bg-red-50 px-1.5 py-0.5 rounded">Wajib diisi</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Contoh: Frontend Developer / Praktik Kerja Lapangan"
-                value={jabatan === "Karyawan" ? "" : jabatan}
-                onChange={(e) => setJabatan(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 transition-colors bg-white font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-500 uppercase font-bold tracking-wider mb-1.5 flex justify-between items-center">
                 <span>Email</span>
                 <span className="text-[10px] text-red-500 font-bold lowercase tracking-normal bg-red-50 px-1.5 py-0.5 rounded">Wajib diisi</span>
               </label>
@@ -367,6 +362,34 @@ export default function ProfilePage() {
                 placeholder="Contoh: 08123456789"
                 value={noTelp}
                 onChange={(e) => setNoTelp(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 transition-colors bg-white font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 uppercase font-bold tracking-wider mb-1.5 flex justify-between items-center">
+                <span>Password Baru</span>
+                <span className="text-[10px] text-gray-400 font-bold lowercase tracking-normal bg-gray-50 px-1.5 py-0.5 rounded">Opsional</span>
+              </label>
+              <input
+                type="password"
+                placeholder="Kosongkan jika tidak ingin mengubah password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 transition-colors bg-white font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 uppercase font-bold tracking-wider mb-1.5 flex justify-between items-center">
+                <span>Konfirmasi Password Baru</span>
+                <span className="text-[10px] text-gray-400 font-bold lowercase tracking-normal bg-gray-50 px-1.5 py-0.5 rounded">Opsional</span>
+              </label>
+              <input
+                type="password"
+                placeholder="Konfirmasi password baru Anda"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2AB0B2] outline-none text-gray-700 transition-colors bg-white font-medium"
               />
             </div>

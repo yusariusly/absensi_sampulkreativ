@@ -1611,7 +1611,7 @@ app.post('/api/users/update-profile', async (req, res) => {
 // 9. Update Bio Data
 app.post('/api/users/update-bio', async (req, res) => {
   try {
-    const { user_id, tanggal_lahir, gender, alamat, jabatan, email, no_telp, kategori } = req.body;
+    const { user_id, tanggal_lahir, gender, alamat, jabatan, email, no_telp, kategori, password } = req.body;
     if (!user_id) {
       return res.status(400).json({ error: 'User ID wajib disertakan' });
     }
@@ -1642,6 +1642,11 @@ app.post('/api/users/update-bio', async (req, res) => {
     if (kategori !== undefined) {
       updateFields += ', kategori = ?';
       params.push(kategori.trim());
+    }
+
+    if (password && password.trim() !== '') {
+      updateFields += ', password = ?';
+      params.push(password);
     }
 
     params.push(user_id);
