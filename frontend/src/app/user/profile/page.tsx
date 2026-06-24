@@ -360,12 +360,6 @@ export default function ProfilePage() {
                 className="printable-card-side w-[240px] h-[380px] rounded-2xl shadow-xl overflow-hidden flex flex-col relative bg-gradient-to-b from-[#FFFFFF] to-[#F5F7F8] border border-gray-200 flex-shrink-0"
                 style={{ fontFamily: "Arial, sans-serif" }}
               >
-                {/* Yellow circle backdrop for the photo */}
-                <div 
-                  className="absolute top-[80px] left-1/2 -translate-x-1/2 w-[125px] h-[125px] rounded-full"
-                  style={{ background: "#F6C13B" }}
-                />
-
                 {/* Top Header */}
                 <div className="relative z-10 flex flex-col items-center pt-5 pb-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -377,15 +371,15 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Photo block */}
-                <div className="relative z-10 flex flex-col items-center mt-3 px-4">
+                <div className="relative z-10 flex flex-col items-center mt-2 px-4">
                   <div className="relative">
-                    <div className="w-[86px] h-[86px] rounded-full overflow-hidden flex items-center justify-center shadow-lg"
-                      style={{border:"3px solid #white", background:"#E5E7EB"}}>
+                    <div className="w-[125px] h-[125px] rounded-full overflow-hidden flex items-center justify-center shadow-lg"
+                      style={{border:"3px solid white", background:"#E5E7EB"}}>
                       {profilePhoto && profilePhoto !== "/uploads/placeholder.jpg" ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={profilePhoto} alt="Foto profil" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={40} className="text-gray-400" />
+                        <User size={60} className="text-gray-400" />
                       )}
                     </div>
                   </div>
