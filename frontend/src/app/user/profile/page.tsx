@@ -334,8 +334,8 @@ export default function ProfilePage() {
 
       {/* Employee ID Card Preview Modal */}
       {showCardModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in print:hidden">
-          <div className="bg-white rounded-3xl w-full max-w-[360px] md:max-w-[620px] overflow-hidden shadow-2xl border border-gray-100 flex flex-col items-center p-6 relative my-8">
+        <div id="card-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div id="card-modal-content" className="bg-white rounded-3xl w-full max-w-[360px] md:max-w-[620px] overflow-hidden shadow-2xl border border-gray-100 flex flex-col items-center p-6 relative my-8">
             
             {/* Close Button */}
             <button
@@ -568,6 +568,19 @@ export default function ProfilePage() {
           /* Show only print ID card wrapper and its children */
           #printable-id-card-wrapper, #printable-id-card-wrapper * {
             visibility: visible;
+          }
+          /* Make modal containers transparent and non-blocking on print */
+          #card-modal-overlay, #card-modal-content {
+            visibility: visible !important;
+            position: static !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            max-width: 100% !important;
           }
           #printable-id-card-wrapper {
             position: absolute;
