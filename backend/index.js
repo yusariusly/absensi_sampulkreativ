@@ -260,7 +260,7 @@ ${senderName}`;
   console.log(`📧 Email pengajuan ${status} berhasil dikirim ke ${to}`);
 }
 
-async function sendRemoteApprovalEmail({ employeeName, rawToken, alasan, date }) {
+async function sendRemoteApprovalEmail({ employeeName, rawToken, alasan, date, frontendUrl }) {
   let host = process.env.SMTP_HOST;
   let port = process.env.SMTP_PORT || 587;
   let user = process.env.SMTP_USER;
@@ -283,8 +283,8 @@ async function sendRemoteApprovalEmail({ employeeName, rawToken, alasan, date })
   }
 
   const finalSender = senderEmail || user;
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const approvalLink = `${frontendUrl}/remote-approval?token=${rawToken}`;
+  const finalFrontendUrl = frontendUrl || process.env.FRONTEND_URL || 'http://localhost:3000';
+  const approvalLink = `${finalFrontendUrl}/remote-approval?token=${rawToken}`;
 
   if (!host || !user || !pass || !to) {
     console.warn("⚠️ SMTP Credentials are not configured. Email approval link fallback:");
@@ -2300,11 +2300,13 @@ app.post('/api/remote/requests', async (req, res) => {
     });
     
     // We send in background, handle potential rejection cleanly
+    const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null);
     sendRemoteApprovalEmail({
       employeeName: user.nama_lengkap,
       rawToken,
       alasan,
-      date: formattedDate
+      date: formattedDate,
+      frontendUrl: origin
     }).catch(emailErr => console.error("Gagal mengirim email permohonan WFH:", emailErr));
 
     res.json({ success: true, message: 'Permohonan remote berhasil diajukan. Menunggu persetujuan atasan.' });

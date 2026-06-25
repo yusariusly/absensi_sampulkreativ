@@ -60,7 +60,11 @@ export default function UserHomePage() {
     }
   };
 
-  const handleCancelWfh = async () => {
+  const handleCancelWfh = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!wfhRequest) return;
     if (!confirm("Apakah Anda yakin ingin membatalkan pengajuan Remote Working ini?")) return;
 
@@ -500,9 +504,10 @@ export default function UserHomePage() {
                 ⏳ Menunggu Persetujuan Atasan
               </span>
               <button
+                type="button"
                 onClick={handleCancelWfh}
                 disabled={wfhSubmitting}
-                className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors"
+                className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors cursor-pointer"
               >
                 Batalkan
               </button>
