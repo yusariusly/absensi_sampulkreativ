@@ -52,14 +52,31 @@ async function uploadFileToSupabase(base64String, bucketName, filePrefix, allowe
 
   const fileName = `${filePrefix}-${Date.now()}.${extension}`;
 
-  const { data, error } = await supabase.storage
+  let uploadResult = await supabase.storage
     .from(bucketName)
     .upload(fileName, buffer, {
       contentType,
       upsert: true
     });
 
-  if (error) throw error;
+  if (uploadResult.error && (uploadResult.error.message.includes('not found') || uploadResult.error.message.toLowerCase().includes('bucket'))) {
+    // Attempt to create bucket dynamically
+    try {
+      const { error: createError } = await supabase.storage.createBucket(bucketName, { public: true });
+      if (!createError) {
+        uploadResult = await supabase.storage
+          .from(bucketName)
+          .upload(fileName, buffer, {
+            contentType,
+            upsert: true
+          });
+      }
+    } catch (createBucketErr) {
+      console.error("Gagal membuat bucket Supabase secara otomatis:", createBucketErr);
+    }
+  }
+
+  if (uploadResult.error) throw uploadResult.error;
 
   const { data: { publicUrl } } = supabase.storage
     .from(bucketName)
