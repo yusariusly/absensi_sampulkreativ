@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { User, Camera, Printer, X, CreditCard, Download, LogOut } from "lucide-react";
 import { MembershipCategoryCard } from "./components/MembershipCategoryCard";
 import { getDeviceId, clearSession } from "../../utils/session";
+import { compressImage, IMAGE_PRESETS } from "../../utils/image";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -93,41 +94,15 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Convert file to base64 and downscale it
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = async () => {
-        // Target size of 800x800 for crisp, high-quality printing on Supabase Storage
-        const maxDim = 800;
-        let width = img.width;
-        let height = img.height;
+    setLoading(true);
+    setError("");
+    setSuccessMsg("");
 
-        if (width > height) {
-          if (width > maxDim) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          }
-        } else {
-          if (height > maxDim) {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        ctx.drawImage(img, 0, 0, width, height);
-        const base64 = canvas.toDataURL("image/jpeg", 0.9);
-
-        setLoading(true);
-        setError("");
-        setSuccessMsg("");
-        
+    try {
+      const compressedFile = await compressImage(file, IMAGE_PRESETS.profile);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
         try {
           const res = await fetch("/api/users/update-profile", {
             method: "POST",
@@ -155,9 +130,12 @@ export default function ProfilePage() {
           setLoading(false);
         }
       };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Gagal melakukan kompresi foto profil:", error);
+      setError("Gagal memproses file foto");
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

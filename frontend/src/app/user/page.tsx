@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Clock, AlertTriangle } from "lucide-react";
 import { getDeviceId } from "../utils/session";
+import { compressImage, IMAGE_PRESETS } from "../utils/image";
 
 export default function UserHomePage() {
   const router = useRouter();
@@ -137,16 +138,27 @@ export default function UserHomePage() {
     }
   };
 
-  const handleReportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      setReportAttachmentBase64(base64);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedFile = await compressImage(file, IMAGE_PRESETS.report);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setReportAttachmentBase64(base64);
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Gagal melakukan kompresi berkas lampiran laporan:", error);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setReportAttachmentBase64(base64);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleReportSubmit = async () => {
@@ -293,43 +305,27 @@ export default function UserHomePage() {
     setModalOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const maxDim = 800;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > maxDim) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          }
-        } else {
-          if (height > maxDim) {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        ctx.drawImage(img, 0, 0, width, height);
-        const base64 = canvas.toDataURL("image/jpeg", 0.8);
+    try {
+      const compressedFile = await compressImage(file, IMAGE_PRESETS.selfie);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
         setPhotoBase64(base64);
       };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Gagal melakukan kompresi berkas izin/sakit:", error);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setPhotoBase64(base64);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleModalSubmit = async () => {
