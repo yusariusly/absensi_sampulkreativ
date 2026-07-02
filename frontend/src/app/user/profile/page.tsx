@@ -396,11 +396,14 @@ export default function ProfilePage() {
             </button>
 
             {/* Header info */}
-            <div className="text-center mb-5 print:hidden">
-              <h4 className="font-bold text-[#1C3D3F] text-base">
-                {userRole === 'student' ? 'Pratinjau Kartu Siswa PKL' : 'Pratinjau Kartu Karyawan'}
+            <div id="card-modal-header" className="text-center mb-6 print:hidden">
+              <span className="text-[10px] md:text-xs font-black tracking-widest text-[#2AB0B2] uppercase block">
+                PRATINJAU KARTU
+              </span>
+              <h4 className="font-extrabold text-[#1C3D3F] text-sm md:text-base tracking-wide uppercase mt-1">
+                {userRole === 'student' ? 'Siswa PKL' : 'Karyawan'}
               </h4>
-              <p className="text-xs text-gray-400">Tampilan depan & belakang kartu</p>
+              <div className="h-[2px] w-8 bg-[#2AB0B2]/30 mx-auto mt-2 rounded-full" />
             </div>
 
             {/* The Actual ID Card Elements wrapper */}
@@ -757,7 +760,7 @@ export default function ProfilePage() {
             height: 100% !important;
             background-color: #ffffff !important;
             z-index: 50 !important;
-            padding: 0 !important;
+            padding: 1.5rem !important;
             margin: 0 !important;
             display: block !important;
             overflow-y: auto !important;
@@ -766,13 +769,17 @@ export default function ProfilePage() {
           #card-modal-content {
             width: 100% !important;
             max-width: none !important;
-            height: 100% !important;
+            height: auto !important;
             min-height: 100vh !important;
             border-radius: 0 !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 1.5rem !important;
+            padding: 1rem 0 3rem 0 !important;
             margin: 0 !important;
+          }
+
+          #printable-id-card-wrapper {
+            overflow: visible !important;
           }
 
           /* Scale up cards on mobile/tablet screen */
@@ -851,11 +858,11 @@ export default function ProfilePage() {
               position: fixed !important;
               inset: 0 !important;
               display: flex !important;
-              align-items: center !important;
+              align-items: flex-start !important;
               justify-content: center !important;
               background-color: rgba(0, 0, 0, 0.6) !important;
               backdrop-filter: blur(4px) !important;
-              padding: 1.5rem !important;
+              padding: 4rem 1.5rem !important;
             }
 
             #card-modal-content {
@@ -867,7 +874,7 @@ export default function ProfilePage() {
               border: 1px solid #f3f4f6 !important;
               box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
               padding: 2.5rem !important;
-              margin: 2rem 0 !important;
+              margin: 0 0 4rem 0 !important;
             }
 
             /* Even larger card scale on desktop */
