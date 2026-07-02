@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import jsQR from "jsqr";
 import { Camera, RefreshCw, AlertCircle } from "lucide-react";
 
@@ -36,11 +36,15 @@ export default function QrScannerView({
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     stopCamera();
     if (!isActive) return;
 
-    setCameraLoading(true);
+    // Set loading asynchronously to avoid synchronous setState inside useEffect
+    Promise.resolve().then(() => {
+      setCameraLoading(true);
+    });
+
     try {
       const constraints: MediaStreamConstraints = {
         video: selectedCameraId
@@ -68,19 +72,25 @@ export default function QrScannerView({
     } finally {
       setCameraLoading(false);
     }
-  };
+  }, [isActive, selectedCameraId, cameraFacing, setScanError]);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (isActive) {
-      startCamera();
+      timer = setTimeout(() => {
+        startCamera();
+      }, 0);
     } else {
       stopCamera();
     }
-    return () => stopCamera();
-  }, [selectedCameraId, cameraFacing, isActive]);
+    return () => {
+      if (timer) clearTimeout(timer);
+      stopCamera();
+    };
+  }, [isActive, startCamera]);
 
   useEffect(() => {
-    let timeoutId: any;
+    let timeoutId: ReturnType<typeof setTimeout>;
     let isMounted = true;
 
     const scanLoop = () => {
@@ -176,6 +186,7 @@ export default function QrScannerView({
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover z-0"
+        style={cameraFacing === "user" ? { transform: "scaleX(-1)" } : undefined}
         muted
         playsInline
       />

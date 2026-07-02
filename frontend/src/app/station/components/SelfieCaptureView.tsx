@@ -121,7 +121,7 @@ export default function SelfieCaptureView({
 
       {/* 2. Floating User Console & Trigger Buttons */}
       {!cameraLoading && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20 bg-slate-900/90 backdrop-blur-md p-6 rounded-3xl border border-slate-800 shadow-2xl flex flex-col gap-4 text-center">
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md max-h-[90vh] overflow-y-auto z-20 bg-slate-900/90 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-800 shadow-2xl flex flex-col gap-3 sm:gap-4 text-center">
           <div>
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
               Siswa / Karyawan Teridentifikasi
@@ -135,7 +135,7 @@ export default function SelfieCaptureView({
             <button
               onClick={handleCapture}
               disabled={cameraLoading || submitting}
-              className={`flex items-center justify-center gap-2 w-full py-4 text-white font-bold rounded-2xl transition-all disabled:opacity-50 disabled:pointer-events-none shadow-lg active:scale-[0.99] text-sm ${
+              className={`flex items-center justify-center gap-2 w-full py-3 sm:py-4 text-white font-bold rounded-2xl transition-all disabled:opacity-50 disabled:pointer-events-none shadow-lg active:scale-[0.99] text-sm ${
                 nextStatus === "Pulang"
                   ? "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
                   : "bg-[#2AB0B2] hover:bg-[#228e90] shadow-[#2AB0B2]/20"
@@ -161,7 +161,7 @@ export default function SelfieCaptureView({
             <button
               onClick={onCancel}
               disabled={submitting}
-              className="flex items-center justify-center gap-1.5 w-full py-2.5 border border-slate-700 hover:bg-slate-800 active:scale-[0.99] text-slate-400 hover:text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+              className="flex items-center justify-center gap-1.5 w-full py-2 sm:py-2.5 border border-slate-700 hover:bg-slate-800 active:scale-[0.99] text-slate-400 hover:text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50"
             >
               <ArrowLeft size={13} />
               <span>Kembali ke Pindai QR</span>
