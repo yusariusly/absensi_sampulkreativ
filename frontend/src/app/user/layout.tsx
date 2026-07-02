@@ -21,11 +21,9 @@ function AppLogo({ size = 80 }: { size?: number }) {
 }
 
 function TopNavbar({
-  showAdminModal,
   setShowAdminModal,
   handleLogout,
 }: {
-  showAdminModal: boolean;
   setShowAdminModal: (show: boolean) => void;
   handleLogout: () => void;
 }) {
@@ -87,7 +85,7 @@ function GlobalSavingsNotice({ isStudent }: { isStudent: boolean }) {
   if (pathname === "/user" && currentView === "pkl") return null;
 
   return (
-    <div className="px-5 pt-2 flex-shrink-0">
+    <div className="px-5 pt-2 flex-shrink-0 print:hidden">
       <SavingsProgressBar />
     </div>
   );
@@ -100,7 +98,20 @@ export default function UserLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [authorized, setAuthorized] = useState(false);
+  const [authorized, setAuthorized] = useState(() => {
+    if (typeof window !== "undefined") {
+      const storedUserStr = localStorage.getItem("v2_user");
+      if (storedUserStr) {
+        try {
+          const storedUser = JSON.parse(storedUserStr);
+          return storedUser && storedUser.role !== "admin";
+        } catch {
+          return false;
+        }
+      }
+    }
+    return false;
+  });
 
   // Admin login verification modal states
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -108,7 +119,19 @@ export default function UserLayout({
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState("");
   const [adminLoading, setAdminLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<{ role?: string; id?: string | number } | null>(() => {
+    if (typeof window !== "undefined") {
+      const storedUserStr = localStorage.getItem("v2_user");
+      if (storedUserStr) {
+        try {
+          return JSON.parse(storedUserStr);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -117,8 +140,9 @@ export default function UserLayout({
       if (storedUserStr) {
         try {
           storedUser = JSON.parse(storedUserStr);
-          setCurrentUser(storedUser);
-        } catch (e) {}
+        } catch {
+          // handled silently
+        }
       }
 
       const deviceId = localStorage.getItem("v2_device_id");
@@ -138,21 +162,15 @@ export default function UserLayout({
           } else {
             router.push("/");
           }
-        } catch (err) {
+        } catch {
           router.push("/");
         }
       };
 
-      if (!storedUser) {
-        setAuthorized(false);
-        recheckDevice();
-      } else if (storedUser.role === "admin") {
-        // Sesi saat ini adalah admin, tetapi sedang mengakses halaman user.
+      if (!storedUser || storedUser.role === "admin") {
+        // Sesi saat ini kosong atau admin, tetapi sedang mengakses halaman user.
         // Kembalikan ke akun karyawan yang terikat pada perangkat ini.
-        setAuthorized(false);
         recheckDevice();
-      } else {
-        setAuthorized(true);
       }
     }
   }, [router]);
@@ -217,7 +235,7 @@ export default function UserLayout({
       } else {
         setAdminError(data.error || "Username atau password salah");
       }
-    } catch (err) {
+    } catch {
       setAdminError("Gagal menghubungi server");
     } finally {
       setAdminLoading(false);
@@ -263,7 +281,6 @@ export default function UserLayout({
             </header>
           }>
             <TopNavbar
-              showAdminModal={showAdminModal}
               setShowAdminModal={setShowAdminModal}
               handleLogout={handleLogout}
             />
