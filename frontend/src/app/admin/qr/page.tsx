@@ -166,7 +166,7 @@ export default function AdminQRPage() {
     : token || "";
 
   const qrImageUrl = qrDataUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=1c3d3f&data=${encodeURIComponent(qrDataUrl)}`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=1c3d3f&ecc=H&data=${encodeURIComponent(qrDataUrl)}`
     : "";
 
   return (

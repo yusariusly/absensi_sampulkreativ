@@ -21,6 +21,8 @@ if (supabaseUrl && supabaseKey) {
 
 const remoteService = require('./services/remoteService');
 const REMOTE_STATUS = remoteService.REMOTE_STATUS;
+const cryptoService = require('./services/cryptoService');
+const stationService = require('./services/stationService');
 
 const UPLOAD_CONFIG = {
   BUCKET_NAME: 'daily-reports',
@@ -1096,7 +1098,8 @@ app.post('/api/auth/login', async (req, res) => {
       alamat: user.alamat || '',
       jabatan: user.jabatan || 'Karyawan',
       email: user.email || '',
-      no_telp: user.no_telp || ''
+      no_telp: user.no_telp || '',
+      card_token: cryptoService.encrypt(user.username)
     });
   } catch (error) {
     res.status(500).json({ error: 'Terjadi kesalahan internal server' });
@@ -1172,7 +1175,8 @@ app.post('/api/auth/login-employee', async (req, res) => {
       email: user.email || '',
       no_telp: user.no_telp || '',
       kategori: user.kategori || 'Karyawan',
-      no_karyawan: user.no_karyawan || ''
+      no_karyawan: user.no_karyawan || '',
+      card_token: cryptoService.encrypt(user.username)
     });
   } catch (error) {
     console.error('Gagal melakukan login karyawan:', error);
@@ -1317,7 +1321,8 @@ app.get('/api/auth/check-device', async (req, res) => {
         email: user.email || '',
         no_telp: user.no_telp || '',
         kategori: user.kategori || 'Karyawan',
-        no_karyawan: user.no_karyawan || ''
+        no_karyawan: user.no_karyawan || '',
+        card_token: cryptoService.encrypt(user.username)
       }
     });
   } catch (error) {
@@ -1865,6 +1870,57 @@ app.post('/api/attendance', async (req, res) => {
     res.json({ success: true, record: { ...newRecord, diubah_oleh_admin: false } });
   } catch (error) {
     res.status(500).json({ error: 'Gagal menyimpan absensi' });
+  }
+});
+
+app.get('/api/attendance/station/verify', async (req, res) => {
+  try {
+    const { token } = req.query;
+    const result = await stationService.verifyStationToken(pool, token);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error, user: result.user });
+    }
+    res.json(result);
+  } catch (error) {
+    console.error('Gagal memverifikasi token stasiun:', error);
+    res.status(500).json({ error: 'Terjadi kesalahan sistem saat memverifikasi token.' });
+  }
+});
+
+app.post('/api/attendance/station/checkin', async (req, res) => {
+  try {
+    const { token, foto_base64, status } = req.body;
+    if (!token || !foto_base64 || !status) {
+      return res.status(400).json({ error: 'Data absensi stasiun tidak lengkap.' });
+    }
+
+    const verifyResult = await stationService.verifyStationToken(pool, token);
+    if (!verifyResult.success) {
+      return res.status(400).json({ error: verifyResult.error });
+    }
+
+    const { user, next_status } = verifyResult;
+    if (next_status !== status) {
+      return res.status(400).json({ error: `Status absensi tidak cocok. Seharusnya ${next_status}, tetapi menerima ${status}.` });
+    }
+
+    const [botTokenSetting] = await pool.query("SELECT key_value FROM settings WHERE key_name = 'telegram_bot_token'");
+    const [chatIdSetting] = await pool.query("SELECT key_value FROM settings WHERE key_name = 'telegram_chat_id'");
+    
+    const botToken = botTokenSetting[0]?.key_value;
+    const chatId = chatIdSetting[0]?.key_value;
+    const hasTelegram = botToken && chatId && botToken.trim() !== '' && chatId.trim() !== '';
+
+    const { newRecord, fileBuffer, filename } = await stationService.checkinStation(pool, user, status, foto_base64, hasTelegram);
+
+    triggerTelegramNotification(newRecord, fileBuffer, filename).catch(err => {
+      console.error("Gagal mengirim notifikasi Telegram dari stasiun:", err);
+    });
+
+    res.json({ success: true, record: newRecord });
+  } catch (error) {
+    console.error('Gagal memproses checkin stasiun:', error);
+    res.status(500).json({ error: 'Terjadi kesalahan internal server saat memproses absensi.' });
   }
 });
 
@@ -3328,7 +3384,7 @@ app.delete('/api/pkl-templates/:id', async (req, res) => {
 
 app.get('/api/pkl-templates/:templateId/weeks', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT id, template_id, week_number, month_number, milestone_title FROM pkl_program_weeks WHERE template_id = ? ORDER BY week_number ASC', [req.params.templateId]);
+    const [rows] = await pool.query('SELECT id, template_id, week_number, month_number, milestone_title, progress_percent FROM pkl_program_weeks WHERE template_id = ? ORDER BY week_number ASC', [req.params.templateId]);
     res.json(rows);
   } catch (error) {
     console.error('Gagal mengambil data minggu:', error);
@@ -3344,13 +3400,32 @@ app.post('/api/pkl-templates/:templateId/weeks', async (req, res) => {
       return res.status(400).json({ error: 'Week number, month number, dan milestone title wajib diisi' });
     }
     const id = 'wk-' + Math.random().toString(36).substr(2, 9);
-    await pool.query('INSERT INTO pkl_program_weeks (id, template_id, week_number, month_number, milestone_title) VALUES (?, ?, ?, ?, ?)', 
+    await pool.query('INSERT INTO pkl_program_weeks (id, template_id, week_number, month_number, milestone_title, progress_percent) VALUES (?, ?, ?, ?, ?, 0)', 
       [id, templateId, parseInt(week_number), parseInt(month_number), milestone_title]
     );
-    res.json({ success: true, data: { id, template_id: templateId, week_number, month_number, milestone_title } });
+    res.json({ success: true, data: { id, template_id: templateId, week_number, month_number, milestone_title, progress_percent: 0 } });
   } catch (error) {
     console.error('Gagal membuat data minggu:', error);
     res.status(500).json({ error: 'Gagal membuat data minggu' });
+  }
+});
+
+app.put('/api/pkl-weeks/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { week_number, month_number, milestone_title, progress_percent } = req.body;
+    if (!week_number || !month_number || !milestone_title) {
+      return res.status(400).json({ error: 'Week number, month number, dan milestone title wajib diisi' });
+    }
+    const progress = progress_percent !== undefined ? Math.min(100, Math.max(0, parseInt(progress_percent) || 0)) : 0;
+    await pool.query(
+      'UPDATE pkl_program_weeks SET week_number = ?, month_number = ?, milestone_title = ?, progress_percent = ? WHERE id = ?',
+      [parseInt(week_number), parseInt(month_number), milestone_title, progress, id]
+    );
+    res.json({ success: true, data: { id, week_number, month_number, milestone_title, progress_percent: progress } });
+  } catch (error) {
+    console.error('Gagal memperbarui data minggu:', error);
+    res.status(500).json({ error: 'Gagal memperbarui data minggu' });
   }
 });
 

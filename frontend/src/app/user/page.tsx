@@ -723,7 +723,7 @@ function UserDashboardContent() {
                               const activeWeekNo = studentDashboard.data.program_kerja?.active_week || 1;
                               return (
                                 <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black bg-[#2AB0B2] text-white uppercase tracking-wider">
-                                  Pekan {activeWeekNo}
+                                  Minggu {activeWeekNo}
                                 </span>
                               );
                             })() : (

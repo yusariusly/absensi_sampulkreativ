@@ -8,11 +8,11 @@ export interface CompressOptions {
 
 export const IMAGE_PRESETS = {
   profile: {
-    maxWidth: 200,
-    maxHeight: 200,
-    quality: 0.6,
-    maxSizeKB: 40,
-    minQuality: 0.25
+    maxWidth: 800,
+    maxHeight: 800,
+    quality: 0.85,
+    maxSizeKB: 300,
+    minQuality: 0.65
   },
   report: {
     maxWidth: 1200,

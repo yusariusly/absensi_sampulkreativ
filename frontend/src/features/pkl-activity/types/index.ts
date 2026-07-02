@@ -36,6 +36,14 @@ export interface StudentDashboardData {
       task_id: string;
       title: string;
       is_completed: boolean;
+      is_mandatory?: boolean;
+    }>;
+    backlog_tasks?: Array<{
+      task_id: string;
+      title: string;
+      week_number: number;
+      is_completed: boolean;
+      is_mandatory?: boolean;
     }>;
     active_week?: number;
     weeks?: Array<{
@@ -43,6 +51,7 @@ export interface StudentDashboardData {
       week_number: number;
       month_number: number;
       milestone_title: string;
+      progress_percent?: number;
       tasks: Array<{
         task_id: string;
         title: string;

@@ -66,11 +66,9 @@ const weeklyFeedbackSchema = z.object({
       required_error: 'Field week_number wajib diisi',
       invalid_type_error: 'Field week_number harus berupa angka/integer'
     }).int(),
-    tags: z.array(z.string().min(1, 'Tag tidak boleh kosong'), {
-      required_error: 'Tag apresiasi cepat minimal harus dipilih satu',
-      invalid_type_error: 'Tags harus berupa array of string'
-    }).min(1, 'Tag apresiasi cepat minimal harus dipilih satu'),
-    comments: z.string().optional().nullable()
+    tags: z.array(z.string()).optional(),
+    comments: z.string().optional().nullable(),
+    extended_days: z.number().int().min(0).max(5).optional()
   })
 });
 

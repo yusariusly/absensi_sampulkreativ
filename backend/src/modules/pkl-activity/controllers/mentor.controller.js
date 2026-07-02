@@ -113,7 +113,8 @@ async function saveWeeklyFeedback(req, res, next) {
     const result = await weeklySummaryService.saveWeeklyFeedback(dbClient, mentorId, params.studentId, {
       week_number: body.week_number,
       tags: body.tags,
-      comments: body.comments
+      comments: body.comments,
+      extended_days: body.extended_days !== undefined ? parseInt(body.extended_days, 10) : 0
     });
 
     res.status(200).json({

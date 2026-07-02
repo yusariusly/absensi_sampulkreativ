@@ -677,7 +677,7 @@ export default function AdminUsersPage() {
                       <>
                         <Info size={12} className="flex-shrink-0 mt-0.5 text-[#2AB0B2]" />
                         <div>
-                          <strong>Tips:</strong> Disarankan memilih hari <strong>Senin</strong> pada minggu pertama siswa mulai PKL agar pembagian pekan aktivitas (Minggu 1, 2, dst.) terhitung rapi.
+                          <strong>Tips:</strong> Disarankan memilih hari <strong>Senin</strong> pada minggu pertama siswa mulai PKL agar pembagian minggu aktivitas (Minggu 1, 2, dst.) terhitung rapi.
                         </div>
                       </>
                     )}

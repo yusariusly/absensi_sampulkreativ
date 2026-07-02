@@ -43,37 +43,35 @@ export function SavingsProgressBar() {
   const percentage = Math.min(Math.round((saved_amount / target_amount) * 100), 100);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 flex-shrink-0 select-none">
+    <div className="bg-white border border-slate-200 rounded-md px-3.5 py-2.5 flex-shrink-0 select-none">
       {/* Header row: icon + label + amounts */}
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
-          <div className="w-5 h-5 rounded-md bg-amber-50 flex items-center justify-center flex-shrink-0">
-            <BookOpen size={11} className="text-amber-600 stroke-[2.5px]" />
-          </div>
+          <BookOpen size={13} className="text-[#2AB0B2]" />
           <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide">
             Tabungan Buku
           </span>
         </div>
         <span className="text-[10px] font-bold text-slate-500">
           {formatRupiah(saved_amount)}{" "}
-          <span className="text-slate-300">/</span>{" "}
+          <span className="text-slate-350">/</span>{" "}
           {formatRupiah(target_amount)}
         </span>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-slate-200 rounded overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-700 ease-out"
+          className="h-full rounded transition-all duration-700 ease-out"
           style={{
             width: `${percentage}%`,
-            backgroundColor: percentage >= 80 ? "#0d9488" : "#2AB0B2",
+            backgroundColor: "#2AB0B2",
           }}
         />
       </div>
 
       {/* Footer: percentage + motivational hint */}
-      <div className="flex items-center justify-between mt-1">
+      <div className="flex items-center justify-between mt-1.5">
         <span className="text-[9px] font-semibold text-slate-400">
           {percentage >= 80
             ? "Hampir selesai, semangat! 🎉"

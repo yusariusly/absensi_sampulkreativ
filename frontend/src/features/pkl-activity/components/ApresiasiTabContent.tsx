@@ -90,7 +90,7 @@ function getHeroConfig(status: RankStatus) {
         iconBg: "bg-teal-50 border-teal-100",
         label: "Peraih Poin Tertinggi",
         labelColor: "text-[#1C3D3F] bg-teal-50 border-[#2AB0B2]/30",
-        subtitle: "Luar biasa! Anda memimpin perolehan poin pekan ini.",
+        subtitle: "Luar biasa! Anda memimpin perolehan poin minggu ini.",
         subtitleColor: "text-slate-500",
         pointsColor: "text-[#1C3D3F]",
       };
@@ -100,7 +100,7 @@ function getHeroConfig(status: RankStatus) {
         iconBg: "bg-slate-50 border-slate-200",
         label: "Peraih Poin Terendah",
         labelColor: "text-slate-700 bg-slate-50 border-slate-200",
-        subtitle: "Jadikan pekan ini motivasi untuk berkinerja lebih baik!",
+        subtitle: "Jadikan minggu ini motivasi untuk berkinerja lebih baik!",
         subtitleColor: "text-slate-500",
         pointsColor: "text-[#1C3D3F]",
       };
@@ -250,7 +250,7 @@ export const ApresiasiTabContent: React.FC<ApresiasiTabContentProps> = ({
         <div className="w-8 h-[2px] bg-slate-200 rounded-full mt-3 mb-1.5" />
 
         <p className="text-[9px] font-bold text-slate-400">
-          Perolehan Mingguan — Pekan {papan_apresiasi.week_number || "—"}
+          Perolehan Mingguan — Minggu {papan_apresiasi.week_number || "—"}
         </p>
       </div>
 

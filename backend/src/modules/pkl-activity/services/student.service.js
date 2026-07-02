@@ -137,6 +137,45 @@ function getWeekDateRange(startDateStr, weekNumber) {
 }
 
 /**
+ * Menghitung progres persentase mingguan secara dinamis berdasarkan hari kerja berjalan (Senin-Jumat)
+ * dan tambahan hari perpanjangan (extendedDays)
+ * @param {string} startDateStr - Tanggal Mulai PKL (YYYY-MM-DD)
+ * @param {number} weekNumber - Nomor Minggu aktif
+ * @param {number} activeWeek - Minggu aktif saat ini
+ * @param {number} extendedDays - Tambahan hari perpanjangan
+ * @param {string} todayDateStr - Tanggal hari ini (YYYY-MM-DD)
+ * @returns {number} Persentase progres (0-100)
+ */
+function calculateWeekProgress(startDateStr, weekNumber, activeWeek, extendedDays, todayDateStr) {
+  if (weekNumber > activeWeek) {
+    return 0;
+  }
+
+  const range = getWeekDateRange(startDateStr, weekNumber);
+  const start = new Date(range.startDate);
+  const today = new Date(todayDateStr);
+
+  if (today < start) {
+    return 0;
+  }
+
+  // Hitung jumlah hari kerja (Senin s.d Jumat) yang sudah dilalui sejak range.startDate sampai todayDateStr
+  let elapsedWorkingDays = 0;
+  const current = new Date(start);
+  while (current <= today) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Senin s.d Jumat
+      elapsedWorkingDays++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  const totalTargetDays = 5 + (extendedDays || 0);
+  const progress = Math.min(100, Math.round((elapsedWorkingDays / totalTargetDays) * 100));
+  return progress;
+}
+
+/**
  * Menyusun data respons dashboard aktif untuk Siswa (Student Dashboard Composition)
  * @param {object} dbClient - Database client/pool
  * @param {string} userId - ID User siswa
@@ -196,17 +235,37 @@ async function getStudentDashboard(dbClient, userId, todayDateStr) {
   const allTasks = await taskRepo.findTasksByStudentId(dbClient, student.student_id);
   const activeWeekTasks = allTasks.filter(t => t.week_number === progress.active_week);
   
+  // Dapatkan seluruh summary mingguan siswa untuk mencari extended_days
+  const [summariesRows] = await dbClient.query(
+    'SELECT week_number, extended_days FROM pkl_weekly_summaries WHERE student_id = ?',
+    [student.student_id]
+  );
+  const summariesMap = new Map(summariesRows.map(s => [s.week_number, s]));
+
   // Dapatkan semua minggu dari program template
   const weeks = await taskRepo.findWeeksByTemplateId(dbClient, student.program_template_id);
   
   // Susun data minggu beserta tugasnya
   const weeksWithTasks = weeks.map(w => {
     const weekTasks = allTasks.filter(t => t.week_id === w.id);
+    const summary = summariesMap.get(w.week_number);
+    const extendedDays = summary ? (summary.extended_days || 0) : 0;
+
+    const progressPercent = calculateWeekProgress(
+      student.start_date,
+      w.week_number,
+      progress.active_week,
+      extendedDays,
+      todayDateStr
+    );
+
     return {
       id: w.id,
       week_number: w.week_number,
       month_number: w.month_number,
       milestone_title: w.milestone_title,
+      progress_percent: progressPercent,
+      extended_days: extendedDays,
       tasks: weekTasks.map(t => ({
         task_id: t.task_id,
         title: t.task_title,
@@ -219,13 +278,25 @@ async function getStudentDashboard(dbClient, userId, todayDateStr) {
   const activeWeekMeta = weeks.find(w => w.week_number === progress.active_week);
   const milestoneTitle = activeWeekMeta ? activeWeekMeta.milestone_title : 'Aktivitas Mingguan';
 
+  // Hutang tugas (backlog) dari minggu sebelumnya yang belum selesai
+  const backlogTasks = allTasks.filter(t => t.week_number < progress.active_week && t.is_completed === 0);
+  const backlogTasksMapped = backlogTasks.map(t => ({
+    task_id: t.task_id,
+    title: t.task_title,
+    week_number: t.week_number,
+    is_completed: false,
+    is_mandatory: t.is_mandatory === 1
+  }));
+
   const programKerja = {
     title: milestoneTitle,
     tasks: activeWeekTasks.map(t => ({
       task_id: t.task_id,
       title: t.task_title,
-      is_completed: t.is_completed === 1
+      is_completed: t.is_completed === 1,
+      is_mandatory: t.is_mandatory === 1
     })),
+    backlog_tasks: backlogTasksMapped,
     active_week: progress.active_week,
     weeks: weeksWithTasks
   };

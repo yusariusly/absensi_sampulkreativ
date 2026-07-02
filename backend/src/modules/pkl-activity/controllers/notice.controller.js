@@ -56,7 +56,7 @@ async function adminSaveNotice(req, res, next) {
 
     // Validasi basic
     if (!body.week_number) {
-      return res.status(400).json({ error: 'Pekan cohort (week_number) wajib disertakan' });
+      return res.status(400).json({ error: 'Minggu cohort (week_number) wajib disertakan' });
     }
     if (!body.prize_name) {
       return res.status(400).json({ error: 'Hadiah (prize_name) wajib diisi' });
@@ -68,14 +68,14 @@ async function adminSaveNotice(req, res, next) {
     const success = await noticeService.adminSaveNotice(dbClient, {
       week_number: parseInt(body.week_number),
       reward_title: body.reward_title || 'Top Performer',
-      reward_description: body.reward_description || 'Apresiasi atas kinerja terbaik pekan ini',
+      reward_description: body.reward_description || 'Apresiasi atas kinerja terbaik minggu ini',
       prize_name: body.prize_name,
       prize_image_url: body.prize_image_url || null,
       show_congrats: body.show_congrats === true || body.show_congrats === 1,
       show_recipients: body.show_recipients === undefined ? true : (body.show_recipients === true || body.show_recipients === 1),
       auto_show_recipients: body.auto_show_recipients === undefined ? true : (body.auto_show_recipients === true || body.auto_show_recipients === 1),
       punishment_title: body.punishment_title || 'Perlu Evaluasi',
-      punishment_description: body.punishment_description || 'Evaluasi atas kinerja pekan ini',
+      punishment_description: body.punishment_description || 'Evaluasi atas kinerja minggu ini',
       consequence: body.consequence,
       consequence_image_url: body.consequence_image_url || null,
       is_active: body.is_active === undefined ? true : (body.is_active === true || body.is_active === 1)

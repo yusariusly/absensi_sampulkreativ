@@ -30,7 +30,7 @@ async function getWeeklyRekapList(dbClient, mentorId, weekNumber) {
   // 3. Ambil seluruh data summary mingguan yang sudah disimpan untuk seluruh siswa bimbingan sekaligus
   const studentIds = students.map(s => s.student_id);
   const [summaryRows] = await dbClient.query(
-    'SELECT id, student_id, week_number, total_points, comments, tags, is_published FROM pkl_weekly_summaries WHERE student_id IN (?)',
+    'SELECT id, student_id, week_number, total_points, comments, tags, extended_days, is_published FROM pkl_weekly_summaries WHERE student_id IN (?)',
     [studentIds]
   );
   const summaryMap = new Map(summaryRows.map(s => [`${s.student_id}_${s.week_number}`, s]));
@@ -122,6 +122,7 @@ async function getWeeklyRekapList(dbClient, mentorId, weekNumber) {
       total_points: calculatedPoints, // Selalu gunakan poin kalkulasi riil agar terhindar dari desinkronisasi
       comments: savedSummary ? (savedSummary.comments || '') : '',
       tags: tags,
+      extended_days: savedSummary ? (savedSummary.extended_days || 0) : 0,
       is_published: savedSummary ? (savedSummary.is_published === 1) : false,
       days_status: daysStatus
     });
@@ -146,12 +147,8 @@ async function saveWeeklyFeedback(dbClient, mentorId, studentId, feedbackData) {
   // 1. Cek kepemilikan siswa
   await studentService.validateMentorStudentOwnership(dbClient, studentId, mentorId);
 
-  // 2. Validasi minimal 1 tag wajib diisi
-  if (!feedbackData.tags || !Array.isArray(feedbackData.tags) || feedbackData.tags.length === 0) {
-    const err = new Error('Tag apresiasi cepat minimal harus dipilih satu');
-    err.code = 'INVALID_INPUT';
-    throw err;
-  }
+  // 2. Tentukan tag yang akan disimpan (tidak dibatasi wajib ada di draft)
+  const tagsToSave = feedbackData.tags && Array.isArray(feedbackData.tags) ? feedbackData.tags : [];
 
   // 3. Cari profil siswa untuk menghitung rentang tanggal minggu berdasarkan cohort baseline
   const student = await studentRepo.findById(dbClient, studentId);
@@ -182,7 +179,8 @@ async function saveWeeklyFeedback(dbClient, mentorId, studentId, feedbackData) {
     week_number: relativeWeek,
     total_points: totalPoints,
     comments: feedbackData.comments || null,
-    tags: JSON.stringify(feedbackData.tags),
+    tags: JSON.stringify(tagsToSave),
+    extended_days: feedbackData.extended_days || 0,
     is_published: 0 // Default draf saat disimpan
   };
 

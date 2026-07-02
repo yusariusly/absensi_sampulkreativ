@@ -38,6 +38,7 @@ interface Week {
   week_number: number;
   month_number: number;
   milestone_title: string;
+  progress_percent?: number;
 }
 
 interface AssignedStudent {
@@ -177,9 +178,17 @@ export default function PklManagementPage() {
   const [newTemplateDuration, setNewTemplateDuration] = useState("4");
 
   // ── Form State: Week ──
-  const [newWeekNumber, setNewWeekNumber] = useState("");
+  const [newWeekNumber, setNewWeekNumber] = useState("1");
   const [newWeekMonth, setNewWeekMonth] = useState("1");
   const [newWeekTitle, setNewWeekTitle] = useState("");
+
+  // ── Inline Edit State: Week ──
+  const [editingWeekId, setEditingWeekId] = useState<string | null>(null);
+  const [editingWeekNumber, setEditingWeekNumber] = useState<string>("");
+  const [editingWeekMonth, setEditingWeekMonth] = useState<string>("");
+  const [editingWeekTitle, setEditingWeekTitle] = useState<string>("");
+  const [editingWeekProgress, setEditingWeekProgress] = useState<string>("0");
+  const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
 
   // ── Error State ──
   const [errorMsg, setErrorMsg] = useState("");
@@ -391,7 +400,7 @@ export default function PklManagementPage() {
         }),
       });
       if (!res.ok) throw new Error("Gagal membuat data minggu");
-      setNewWeekNumber("");
+      setNewWeekNumber("1");
       setNewWeekTitle("");
       fetchWeeks(selectedTemplate.id);
     } catch (err: any) {
@@ -408,6 +417,49 @@ export default function PklManagementPage() {
       if (selectedTemplate) fetchWeeks(selectedTemplate.id);
     } catch (err: any) {
       setErrorMsg(err.message || "Gagal menghapus data minggu");
+    }
+  };
+
+  const startEditWeek = (wk: Week) => {
+    setEditingWeekId(wk.id);
+    setEditingWeekNumber(wk.week_number.toString());
+    setEditingWeekMonth(wk.month_number.toString());
+    setEditingWeekTitle(wk.milestone_title);
+    setEditingWeekProgress((wk.progress_percent || 0).toString());
+  };
+
+  const cancelEditWeek = () => {
+    setEditingWeekId(null);
+    setEditingWeekNumber("");
+    setEditingWeekMonth("");
+    setEditingWeekTitle("");
+    setEditingWeekProgress("0");
+  };
+
+  const handleUpdateWeek = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWeekId || !selectedTemplate || !editingWeekNumber || !editingWeekTitle.trim()) return;
+
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch(`/api/pkl-weeks/${editingWeekId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          week_number: parseInt(editingWeekNumber),
+          month_number: parseInt(editingWeekMonth),
+          milestone_title: editingWeekTitle,
+          progress_percent: parseInt(editingWeekProgress),
+        }),
+      });
+      if (!res.ok) throw new Error("Gagal memperbarui data minggu");
+      
+      cancelEditWeek();
+      fetchWeeks(selectedTemplate.id);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Gagal memperbarui data minggu");
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -807,13 +859,17 @@ export default function PklManagementPage() {
                   ))}
                 </FormSelect>
 
-                <FormInput
+                 <FormSelect
                   label="Minggu Ke"
-                  placeholder="cth: 1"
                   value={newWeekNumber}
                   onChange={setNewWeekNumber}
-                  type="number"
-                />
+                >
+                  {[1, 2, 3, 4].map((w) => (
+                    <option key={w} value={w.toString()}>
+                      Minggu {w}
+                    </option>
+                  ))}
+                </FormSelect>
               </div>
 
               <FormInput
@@ -847,29 +903,119 @@ export default function PklManagementPage() {
                     key={wk.id}
                     className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/70 bg-white hover:bg-slate-50/50 transition-colors"
                   >
-                    {/* Week Info */}
-                    <div className="flex-1 min-w-0 pr-3">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-[10px] font-black px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded-md">
-                          Minggu {wk.week_number}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Bulan {wk.month_number}
-                        </span>
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-800 leading-snug break-words">
-                        {wk.milestone_title}
-                      </h3>
-                    </div>
+                    {editingWeekId === wk.id ? (
+                      <form onSubmit={handleUpdateWeek} className="w-full flex flex-col gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div>
+                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Minggu Ke</label>
+                            <select
+                              value={editingWeekNumber}
+                              onChange={(e) => setEditingWeekNumber(e.target.value)}
+                              className="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2AB0B2] bg-white text-slate-800 cursor-pointer"
+                              required
+                            >
+                              {[1, 2, 3, 4].map((w) => (
+                                <option key={w} value={w.toString()}>
+                                  Minggu {w}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Bulan Ke</label>
+                            <select
+                              value={editingWeekMonth}
+                              onChange={(e) => setEditingWeekMonth(e.target.value)}
+                              className="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2AB0B2] bg-white text-slate-800 cursor-pointer"
+                              required
+                            >
+                              {Array.from({ length: selectedTemplate.duration_months }, (_, i) => (
+                                <option key={i + 1} value={(i + 1).toString()}>
+                                  Bulan {i + 1}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Target / Judul Aktivitas</label>
+                            <input
+                              type="text"
+                              value={editingWeekTitle}
+                              onChange={(e) => setEditingWeekTitle(e.target.value)}
+                              className="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2AB0B2] bg-white text-slate-800"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Progres (%)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={editingWeekProgress}
+                              onChange={(e) => setEditingWeekProgress(e.target.value)}
+                              className="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2AB0B2] bg-white text-slate-800"
+                              required
+                            />
+                          </div>
+                        </div>
 
-                    {/* Delete Action */}
-                    <button
-                      onClick={() => handleDeleteWeek(wk.id)}
-                      className="p-2 text-slate-350 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer flex-shrink-0"
-                      title="Hapus Minggu"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                        <div className="flex items-center justify-end gap-2 mt-1">
+                          <button
+                            type="button"
+                            onClick={cancelEditWeek}
+                            className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            Batal
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSavingEdit}
+                            className="px-3 py-1.5 bg-[#2AB0B2] hover:bg-[#209092] disabled:bg-[#2AB0B2]/50 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                          >
+                            {isSavingEdit ? "Menyimpan..." : "Simpan"}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        {/* Week Info */}
+                        <div className="flex-1 min-w-0 pr-3">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[10px] font-black px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded-md">
+                              Minggu {wk.week_number}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              Bulan {wk.month_number}
+                            </span>
+                            <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-md">
+                              Progres: {wk.progress_percent || 0}%
+                            </span>
+                          </div>
+                          <h3 className="text-sm font-bold text-slate-800 leading-snug break-words">
+                            {wk.milestone_title}
+                          </h3>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <button
+                            onClick={() => startEditWeek(wk)}
+                            className="p-2 text-slate-350 hover:text-[#2AB0B2] rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                            title="Edit Minggu"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteWeek(wk.id)}
+                            className="p-2 text-slate-350 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Hapus Minggu"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

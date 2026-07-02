@@ -15,6 +15,7 @@ import {
   Lock,
   Star,
   CheckCircle2,
+  Check,
   Shirt,
   User,
   Smile,
@@ -116,6 +117,25 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
   const [fullname, setFullname] = useState("Siswa Magang");
   const [sekolahName, setSekolahName] = useState("Instansi Pendidikan");
   const [selectedWeekNo, setSelectedWeekNo] = useState<number>(data.program_kerja?.active_week || data.progress?.active_week || 1);
+
+  // Navigasi Bulan untuk Kurikulum
+  const initialMonth = (() => {
+    const initialWeek = (data.program_kerja?.weeks || []).find(
+      (w: any) => w.week_number === (data.program_kerja?.active_week || data.progress?.active_week || 1)
+    );
+    return initialWeek ? initialWeek.month_number : 1;
+  })();
+  const [selectedMonth, setSelectedMonth] = useState<number>(initialMonth);
+
+  const handleMonthChange = (month: number) => {
+    setSelectedMonth(month);
+    const weeksInMonth = (data.program_kerja?.weeks || []).filter((w: any) => w.month_number === month);
+    if (weeksInMonth.length > 0) {
+      setSelectedWeekNo(weeksInMonth[0].week_number);
+    } else {
+      setSelectedWeekNo((month - 1) * 4 + 1);
+    }
+  };
 
   // Notice Integration
   const [notice, setNotice] = useState<any>(null);
@@ -305,7 +325,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             <div className="flex items-center gap-1.5">
               <span className="text-[10px]">📌</span>
               <span className="text-[10px] font-black text-slate-800 uppercase tracking-wide">
-                Notice Pekan {notice.week_number}
+                Notice Minggu {notice.week_number}
               </span>
             </div>
             
@@ -351,7 +371,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
               <div className="flex flex-col gap-2">
                 <span className="text-[9px] font-black text-[#0F5132] bg-emerald-50 border border-emerald-250 px-2 py-0.5 rounded w-max uppercase tracking-wider flex items-center gap-1">
                   <Gift size={10} className="stroke-[2.5px]" />
-                  Reward Pekan ini
+                  Reward Minggu ini
                 </span>
 
                 {/* Prize inline row */}
@@ -372,7 +392,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                       {notice.reward.prize_name}
                     </h4>
                     <p className="text-[10px] text-slate-450 font-bold truncate leading-tight mt-0.5">
-                      {notice.reward.description || "Apresiasi kinerja terbaik pekan ini."}
+                      {notice.reward.description || "Apresiasi kinerja terbaik minggu ini."}
                     </p>
                   </div>
                 </div>
@@ -420,7 +440,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
               <div className="flex flex-col gap-2">
                 <span className="text-[9px] font-black text-[#842029] bg-rose-50 border border-rose-250 px-2 py-0.5 rounded w-max uppercase tracking-wider flex items-center gap-1">
                   <AlertTriangle size={10} className="stroke-[2.5px]" />
-                  Punishment Pekan ini
+                  Punishment Minggu ini
                 </span>
 
                 {/* Consequence inline row */}
@@ -441,7 +461,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                       {notice.punishment.consequence}
                     </h4>
                     <p className="text-[10px] text-slate-450 font-bold truncate leading-tight mt-0.5">
-                      {notice.punishment.description || "Evaluasi/pembinaan untuk yang belum mencapai target pekan ini."}
+                      {notice.punishment.description || "Evaluasi/pembinaan untuk yang belum mencapai target minggu ini."}
                     </p>
                   </div>
                 </div>
@@ -559,7 +579,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                       Bulan {Math.ceil(progress.active_week / 4)}
                     </p>
                     <p className="text-[8px] font-semibold text-slate-400 mt-1 leading-none">
-                      Pekan {progress.active_week}
+                      Minggu {progress.active_week}
                     </p>
                   </div>
                   <div className="bg-slate-50/75 border border-slate-150 p-3 rounded-2xl flex flex-col items-center justify-center transition-all hover:bg-slate-50">
@@ -568,7 +588,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                       {progress.total_weeks / 4} Bulan
                     </p>
                     <p className="text-[8px] font-semibold text-slate-400 mt-1 leading-none">
-                      Total {progress.total_weeks} Pekan
+                      Total {progress.total_weeks} Minggu
                     </p>
                   </div>
                 </div>
@@ -587,7 +607,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                   </div>
                   <div className="flex justify-between items-center text-[8px] text-slate-400 font-semibold mt-1">
                     <span>Hari ini: {today.date}</span>
-                    <span>{progress.active_week} dari {progress.total_weeks} Pekan</span>
+                    <span>{progress.active_week} dari {progress.total_weeks} Minggu</span>
                   </div>
                 </div>
               </div>
@@ -642,54 +662,101 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
         )}
 
         {activeSubTab === "curriculum" && (
-          <div className="bg-white rounded-xl p-4 border border-slate-200 flex flex-col gap-3 flex-shrink-0">
+          <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col gap-3.5 flex-shrink-0">
             <div className="flex justify-between items-center pb-1">
               <div className="flex items-center gap-1.5">
                 <ClipboardList size={14} className="text-[#2AB0B2]" />
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Materi & Target Belajar PKL</span>
               </div>
               {program_kerja && program_kerja.active_week && (
-                <span className="text-[9px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                <span className="text-[9px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-sm border border-slate-200">
                   Minggu Aktif: M{program_kerja.active_week}
                 </span>
               )}
             </div>
 
             {program_kerja ? (
-              <div className="space-y-3.5">
-                {/* Horizontal Week Selector Badges */}
-                {program_kerja.weeks && program_kerja.weeks.length > 0 && (
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-                    {program_kerja.weeks.map((wk) => {
-                      const isSelected = selectedWeekNo === wk.week_number;
-                      const isActiveWeek = program_kerja.active_week === wk.week_number;
+              <div className="space-y-4">
+                {/* Month Selection */}
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Pilih Bulan
+                  </span>
+                  {(() => {
+                    const totalMonths = progress?.total_weeks ? Math.min(Math.ceil(progress.total_weeks / 4), 6) : 4;
+                    return (
+                      <div className="flex flex-wrap gap-1.5">
+                        {Array.from({ length: totalMonths }, (_, i) => {
+                          const mNum = i + 1;
+                          const isSelected = selectedMonth === mNum;
+                          return (
+                            <button
+                              key={mNum}
+                              type="button"
+                              onClick={() => handleMonthChange(mNum)}
+                              className={`flex-1 min-w-[60px] text-center py-2 px-2.5 rounded border text-[10px] font-black transition-all cursor-pointer select-none ${
+                                isSelected
+                                  ? "bg-[#2AB0B2] border-[#2AB0B2] text-white"
+                                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                              }`}
+                            >
+                              Bulan {mNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
 
-                      return (
-                        <button
-                          key={wk.id}
-                          type="button"
-                          onClick={() => setSelectedWeekNo(wk.week_number)}
-                          className={`flex-shrink-0 flex flex-col items-center justify-center py-2 px-3 rounded-lg border transition-colors min-w-[70px] text-center cursor-pointer select-none active:scale-[0.97] ${
-                            isSelected
-                              ? "bg-[#2AB0B2] border-[#209092] text-white"
-                              : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700"
-                          }`}
-                        >
-                          <span className={`text-[10px] font-bold tracking-tight ${isSelected ? "text-white" : "text-slate-800"}`}>
-                            Minggu {wk.week_number}
-                          </span>
-                          {isActiveWeek && (
-                            <span className={`text-[7px] font-black uppercase mt-1 px-1 rounded-sm ${
-                              isSelected ? "bg-white text-[#2AB0B2]" : "bg-[#2AB0B2] text-white"
-                            }`}>
-                              Aktif
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                {/* Week Selection */}
+                <div className="bg-slate-50/60 border border-slate-200/60 rounded-xl p-3">
+                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block mb-2">
+                    Pilih Minggu
+                  </span>
+                  {(() => {
+                    const weeksInMonth = (program_kerja.weeks || []).filter(
+                      (wk: any) => wk.month_number === selectedMonth
+                    );
+
+                    return weeksInMonth.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {weeksInMonth.map((wk: any) => {
+                          const isSelected = selectedWeekNo === wk.week_number;
+                          const isActiveWeek = program_kerja.active_week === wk.week_number;
+
+                          return (
+                            <button
+                              key={wk.id}
+                              type="button"
+                              onClick={() => setSelectedWeekNo(wk.week_number)}
+                              className={`flex-1 min-w-[70px] py-1.5 px-2 rounded-lg border transition-all text-center cursor-pointer select-none flex flex-col items-center justify-center gap-0.5 ${
+                                isSelected
+                                  ? "bg-[#2AB0B2]/10 border-[#2AB0B2]/40 text-[#2AB0B2] shadow-3xs"
+                                  : "bg-white border-slate-200 hover:border-slate-300 text-slate-500"
+                              }`}
+                            >
+                              <span className="text-[9.5px] font-black">
+                                Minggu {wk.week_number}
+                              </span>
+                              {isActiveWeek && (
+                                <span className={`text-[6px] font-black uppercase px-1 py-0.2 rounded-sm tracking-wide ${
+                                  isSelected ? "bg-[#2AB0B2] text-white" : "bg-slate-200 text-slate-500"
+                                }`}>
+                                  Aktif
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-slate-400 font-bold text-center py-2 bg-white border border-dashed border-slate-200 rounded-lg">
+                        Belum ada aktivitas mingguan yang diatur untuk Bulan {selectedMonth}.
+                      </p>
+                    );
+                  })()}
+                </div>
 
                 {/* Selected Week Content */}
                 {(() => {
@@ -699,41 +766,141 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
 
                   if (selectedWeekData) {
                     return (
-                      <div className="space-y-3.5 mt-1">
-                        {/* Target milestone */}
-                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col gap-1">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Topik Utama Pekan Ini</span>
-                          <h3 className="text-xs font-extrabold text-slate-800 leading-snug">{selectedWeekData.milestone_title}</h3>
+                      <div className="space-y-3 pt-1">
+                        {/* Target milestone & progress combined */}
+                        <div className="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col gap-2.5">
+                          <div className="flex justify-between items-start">
+                            <div className="flex flex-col gap-1 flex-1 min-w-0 pr-2">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Topik Utama Minggu Ini</span>
+                              <h3 className="text-xs font-extrabold text-slate-800 leading-snug break-words">
+                                {selectedWeekData.milestone_title}
+                              </h3>
+                            </div>
+                            <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Progres</span>
+                              <span className="text-[11px] font-black text-[#2AB0B2] leading-none">
+                                {selectedWeekData.progress_percent || 0}%
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="w-full bg-slate-200 rounded h-1.5 overflow-hidden">
+                            <div
+                              className="bg-[#2AB0B2] h-full rounded transition-all duration-500 ease-out"
+                              style={{ width: `${selectedWeekData.progress_percent || 0}%` }}
+                            />
+                          </div>
                         </div>
 
-                        {/* Tasks List (Informational Bullet Points, no checklist) */}
+                        {/* Tasks List (Interactive Checklist) */}
                         <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 flex flex-col gap-2">
                           {selectedWeekData.tasks && selectedWeekData.tasks.length > 0 ? (
-                            selectedWeekData.tasks.map((task) => (
-                              <div
-                                key={task.task_id}
-                                className="flex items-start gap-2.5 p-3 bg-white border border-slate-200 rounded-lg"
-                              >
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#2AB0B2] mt-1.5 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs leading-relaxed font-semibold text-slate-700">
-                                    {task.title}
-                                  </p>
-                                  {task.is_mandatory && (
-                                    <span className="inline-block text-[7px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1 rounded-sm mt-1 tracking-wide uppercase">
-                                      Topik Wajib
-                                    </span>
+                            selectedWeekData.tasks.map((task) => {
+                              const isEditable = isSelectedActive;
+                              return (
+                                <div
+                                  key={task.task_id}
+                                  className={`flex items-start gap-2.5 p-3 bg-white border border-slate-200 rounded transition-all ${
+                                    isEditable ? "hover:border-[#2AB0B2]/50 hover:shadow-xs" : ""
+                                  }`}
+                                >
+                                  {isEditable ? (
+                                    <button
+                                      type="button"
+                                      disabled={isToggling}
+                                      onClick={() => toggleTask({ taskId: task.task_id, isCompleted: !task.is_completed })}
+                                      className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${
+                                        task.is_completed
+                                          ? "bg-[#2AB0B2] border-[#2AB0B2] text-white"
+                                          : "bg-white border-slate-300 hover:border-[#2AB0B2]"
+                                      }`}
+                                    >
+                                      {task.is_completed && <Check size={10} strokeWidth={4} />}
+                                    </button>
+                                  ) : (
+                                    <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                                      task.is_completed ? "bg-[#2AB0B2]" : "bg-slate-300"
+                                    }`} />
                                   )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-xs leading-relaxed font-semibold transition-all ${
+                                      task.is_completed ? "text-slate-400 line-through" : "text-slate-700"
+                                    }`}>
+                                      {task.title}
+                                    </p>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                      {task.is_mandatory && (
+                                        <span className="inline-block text-[7px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1 rounded-sm tracking-wide uppercase">
+                                          Topik Wajib
+                                        </span>
+                                      )}
+                                      {task.is_completed && (
+                                        <span className="inline-block text-[7px] font-black text-[#2AB0B2] bg-[#2AB0B2]/10 border border-[#2AB0B2]/20 px-1 rounded-sm tracking-wide uppercase">
+                                          Selesai
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            ))
+                              );
+                            })
                           ) : null}
                         </div>
+
+                        {/* Backlog Tasks (Carry-over dari minggu sebelumnya) */}
+                        {isSelectedActive && program_kerja.backlog_tasks && program_kerja.backlog_tasks.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-slate-200">
+                            <div className="flex items-center gap-1.5 mb-2.5">
+                              <span className="text-[9px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-sm tracking-wider uppercase">
+                                Tugas Belum Selesai (Minggu Sebelumnya)
+                              </span>
+                            </div>
+                            <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1 flex flex-col gap-2">
+                              {program_kerja.backlog_tasks.map((task) => (
+                                <div
+                                  key={task.task_id}
+                                  className="flex items-start gap-2.5 p-3 bg-amber-50/20 border border-amber-200/50 rounded transition-all hover:border-[#2AB0B2]/50 hover:shadow-xs"
+                                >
+                                  <button
+                                    type="button"
+                                    disabled={isToggling}
+                                    onClick={() => toggleTask({ taskId: task.task_id, isCompleted: !task.is_completed })}
+                                    className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${
+                                      task.is_completed
+                                        ? "bg-[#2AB0B2] border-[#2AB0B2] text-white"
+                                        : "bg-white border-slate-300 hover:border-[#2AB0B2]"
+                                    }`}
+                                  >
+                                    {task.is_completed && <Check size={10} strokeWidth={4} />}
+                                  </button>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-xs leading-relaxed font-semibold transition-all ${
+                                      task.is_completed ? "text-slate-400 line-through" : "text-slate-700"
+                                    }`}>
+                                      {task.title}
+                                    </p>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                      <span className="inline-block text-[7px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-1 rounded-sm tracking-wide uppercase">
+                                        Minggu {task.week_number}
+                                      </span>
+                                      {task.is_mandatory && (
+                                        <span className="inline-block text-[7px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1 rounded-sm tracking-wide uppercase">
+                                          Topik Wajib
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   } else {
                     return (
-                      <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 mt-1">
+                      <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded border border-dashed border-slate-200 mt-1">
                         <ClipboardList size={22} className="text-slate-300 mb-2" />
                         <p className="text-xs font-bold text-slate-500">Materi Belum Diatur</p>
                         <p className="text-[10px] text-slate-400 max-w-[200px] leading-relaxed mt-1">
@@ -778,7 +945,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scoreboard PKL</span>
                 </div>
                 <span className="text-[9px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                  Pekan Ke-{scoreboardWeek}
+                  Minggu Ke-{scoreboardWeek}
                 </span>
               </div>
 

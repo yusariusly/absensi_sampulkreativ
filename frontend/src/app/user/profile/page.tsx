@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Camera, Printer, X, CreditCard, Download, LogOut } from "lucide-react";
+import { User, Camera, Printer, X, CreditCard, Download, LogOut, Mail, Phone } from "lucide-react";
 import { getDeviceId, clearSession } from "../../utils/session";
 import { compressImage, IMAGE_PRESETS } from "../../utils/image";
 
@@ -19,6 +19,8 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [noTelp, setNoTelp] = useState("");
   const [noKaryawan, setNoKaryawan] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
   
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -34,12 +36,16 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const [cardToken, setCardToken] = useState("");
+
   useEffect(() => {
     if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
       const storedUser = localStorage.getItem("v2_user");
       if (storedUser) {
         const userObj = JSON.parse(storedUser);
         setUserId(userObj.id);
+        setCardToken(userObj.card_token || userObj.username || "");
         setFullname(userObj.nama_lengkap);
         setUsername(userObj.username);
         setProfilePhoto(userObj.foto_profile || "/uploads/placeholder.jpg");
@@ -52,6 +58,7 @@ export default function ProfilePage() {
         setNoTelp(userObj.no_telp || "");
         setKategori(userObj.kategori || "Karyawan");
         setNoKaryawan(userObj.no_karyawan || "");
+        setSchoolName(userObj.school_name || "");
 
         // Fetch current user details to get real-time updates
         fetch("/api/users")
@@ -68,6 +75,7 @@ export default function ProfilePage() {
                 setNoTelp(currentMe.no_telp || "");
                 setKategori(currentMe.kategori || "Karyawan");
                 setNoKaryawan(currentMe.no_karyawan || "");
+                setSchoolName(currentMe.school_name || "");
                 
                 // Keep localstorage synced
                 const updatedUserObj = {
@@ -78,7 +86,8 @@ export default function ProfilePage() {
                   email: currentMe.email || "",
                   no_telp: currentMe.no_telp || "",
                   kategori: currentMe.kategori || "Karyawan",
-                  no_karyawan: currentMe.no_karyawan || ""
+                  no_karyawan: currentMe.no_karyawan || "",
+                  school_name: currentMe.school_name || ""
                 };
                 localStorage.setItem("v2_user", JSON.stringify(updatedUserObj));
               }
@@ -278,7 +287,19 @@ export default function ProfilePage() {
             <p className="text-[#2AB0B2] text-xs font-mono font-bold mt-1 select-all">{noKaryawan}</p>
           )}
           
-          {userRole !== 'student' && (
+          {userRole === 'student' ? (
+            <button
+              type="button"
+              onClick={() => {
+                setError("");
+                setShowCardModal(true);
+              }}
+              className="mt-4 px-4 py-2.5 bg-gradient-to-r from-[#2AB0B2] to-[#209092] hover:from-[#209092] hover:to-[#1C3D3F] text-white font-bold text-xs rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <CreditCard size={13} />
+              Download Kartu Siswa PKL
+            </button>
+          ) : (
             <button
               type="button"
               onClick={() => {
@@ -373,7 +394,9 @@ export default function ProfilePage() {
 
             {/* Header info */}
             <div className="text-center mb-5 print:hidden">
-              <h4 className="font-bold text-[#1C3D3F] text-base">Pratinjau Kartu Karyawan</h4>
+              <h4 className="font-bold text-[#1C3D3F] text-base">
+                {userRole === 'student' ? 'Pratinjau Kartu Siswa PKL' : 'Pratinjau Kartu Karyawan'}
+              </h4>
               <p className="text-xs text-gray-400">Tampilan depan & belakang bersampingan</p>
             </div>
 
@@ -426,13 +449,21 @@ export default function ProfilePage() {
                   <div className="h-[1px] bg-[#F6C13B]/70 w-32 mx-auto my-1" />
                   
                   <span className="text-white text-[8px] font-bold tracking-widest uppercase block leading-none mb-1">
-                    {jabatan}
+                    {userRole === 'student' ? 'SISWA PKL' : jabatan}
                   </span>
 
-                  {noKaryawan && (
-                    <span className="text-[#F6C13B] text-[7.5px] font-mono tracking-wider block leading-none mb-1 select-all">
-                      {noKaryawan}
-                    </span>
+                  {userRole === 'student' ? (
+                    schoolName && (
+                      <span className="text-[#F6C13B] text-[7.5px] font-bold tracking-wider block leading-none mb-1 uppercase truncate max-w-[200px]">
+                        {schoolName}
+                      </span>
+                    )
+                  ) : (
+                    noKaryawan && (
+                      <span className="text-[#F6C13B] text-[7.5px] font-mono tracking-wider block leading-none mb-1 select-all">
+                        {noKaryawan}
+                      </span>
+                    )
                   )}
 
                   {/* Address & Contacts */}
@@ -450,51 +481,129 @@ export default function ProfilePage() {
               </div>
 
               {/* CARD BACK */}
-              <div
-                id="printable-id-card-back"
-                className="printable-card-side w-[240px] h-[380px] bg-[#1C3D3F] rounded-2xl shadow-lg border border-gray-900 overflow-hidden flex flex-col justify-between relative flex-shrink-0"
-                style={{
-                  fontFamily: "Arial, sans-serif",
-                }}
-              >
-                {/* Circular Pattern Overlays */}
-                <div className="absolute top-[-50px] left-[-50px] w-48 h-48 rounded-full border border-white/5 bg-white/2" />
-                <div className="absolute top-[-20px] left-[-20px] w-64 h-64 rounded-full border border-white/5 bg-transparent" />
-                <div className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full border border-white/5 bg-[#2AB0B2]/5" />
-                <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-white/2" />
-                
-                {/* Slot punch line at the top */}
-                <div className="w-12 h-2.5 bg-black/30 rounded-full mx-auto mt-3 border border-white/10 z-10" />
+              {userRole === 'student' ? (
+                <div
+                  id="printable-id-card-back"
+                  className="printable-card-side w-[240px] h-[380px] bg-[#1C3D3F] rounded-2xl shadow-lg border border-gray-900 overflow-hidden flex flex-col justify-between relative flex-shrink-0"
+                  style={{
+                    fontFamily: "Arial, sans-serif",
+                  }}
+                >
+                  {/* Circular Pattern Overlays */}
+                  <div className="absolute top-[-50px] left-[-50px] w-48 h-48 rounded-full border border-white/5 bg-white/2" />
+                  <div className="absolute top-[-20px] left-[-20px] w-64 h-64 rounded-full border border-white/5 bg-transparent" />
+                  <div className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full border border-white/5 bg-[#2AB0B2]/5" />
+                  
+                  {/* Slot punch line at the top */}
+                  <div className="w-12 h-2.5 bg-black/30 rounded-full mx-auto mt-3 border border-white/10 z-10" />
 
-                {/* Center Content: Logo */}
-                <div className="flex-1 flex flex-col items-center justify-center z-10 px-4 mt-6">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/logo.png"
-                    alt="Logo"
-                    className="w-16 h-16 object-contain"
-                  />
-                  <div className="flex flex-col items-center leading-none mt-3">
-                    <span className="text-[12px] font-black text-white tracking-wider">SAMPULKREATIV</span>
-                    <span className="text-[8px] text-[#F6C13B] tracking-widest font-bold mt-1">TECHNOLOGY</span>
+                  {/* Center Content: QR Code with centered logo */}
+                  <div className="flex-1 flex flex-col items-center justify-center z-10 px-4 mt-2">
+                    <div className="relative w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center shadow-md">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1c3d3f&ecc=H&data=${encodeURIComponent(
+                          cardToken && baseUrl ? `${baseUrl}/station?token=${encodeURIComponent(cardToken)}` : username || ""
+                        )}`}
+                        alt="QR Absen"
+                        className="w-full h-full object-contain"
+                      />
+                      {/* Center Logo overlay */}
+                      <div className="absolute w-7 h-7 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm border border-gray-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/logo.png"
+                          alt="SK Logo"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-center leading-none mt-4">
+                      <span className="text-[10px] font-black text-white tracking-widest uppercase">QR CODE ABSENSI</span>
+                      <span className="text-[7px] text-[#F6C13B] tracking-widest font-bold mt-1 uppercase">SAMPULKREATIV</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Footer Band */}
+                  <div className="w-full text-center text-white px-3 pb-5 pt-2 bg-gradient-to-t from-black/40 to-transparent z-10">
+                    <p className="text-[7px] font-bold tracking-wider text-gray-200 uppercase">SAMPULKREATIV TECHNOLOGY</p>
+                    <p className="text-[5px] text-gray-300 font-semibold leading-tight mt-0.5">Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521</p>
+                    <div className="flex justify-center items-center gap-1.5 mt-2.5 text-[5px] font-mono text-gray-200 font-bold border-t border-white/10 pt-2">
+                      <span className="flex items-center gap-1 truncate max-w-[100px] leading-none">
+                        <Mail size={6} className="text-[#F6C13B] flex-shrink-0" strokeWidth={2.5} />
+                        <span>{email || "-"}</span>
+                      </span>
+                      <span className="text-white/20">|</span>
+                      <span className="flex items-center gap-1 leading-none">
+                        <Phone size={6} className="text-[#F6C13B] flex-shrink-0" strokeWidth={2.5} />
+                        <span>{noTelp || "-"}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <div
+                  id="printable-id-card-back"
+                  className="printable-card-side w-[240px] h-[380px] bg-[#1C3D3F] rounded-2xl shadow-lg border border-gray-900 overflow-hidden flex flex-col justify-between relative flex-shrink-0"
+                  style={{
+                    fontFamily: "Arial, sans-serif",
+                  }}
+                >
+                  {/* Circular Pattern Overlays */}
+                  <div className="absolute top-[-50px] left-[-50px] w-48 h-48 rounded-full border border-white/5 bg-white/2" />
+                  <div className="absolute top-[-20px] left-[-20px] w-64 h-64 rounded-full border border-white/5 bg-transparent" />
+                  <div className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full border border-white/5 bg-[#2AB0B2]/5" />
+                  
+                  {/* Slot punch line at the top */}
+                  <div className="w-12 h-2.5 bg-black/30 rounded-full mx-auto mt-3 border border-white/10 z-10" />
 
-                {/* Bottom Footer Band */}
-                <div className="w-full text-center text-white px-3 pb-5 pt-2 bg-gradient-to-t from-black/40 to-transparent z-10">
-                  <p className="text-[7px] font-bold tracking-wider text-gray-200 uppercase">SAMPULKREATIV TECHNOLOGY</p>
-                  <p className="text-[5px] text-gray-300 font-semibold leading-tight mt-0.5">Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521</p>
-                  <div className="flex justify-center items-center gap-1.5 mt-2.5 text-[5px] font-mono text-gray-200 font-bold border-t border-white/10 pt-2">
-                    <span className="flex items-center gap-0.5 truncate max-w-[100px]">
-                      <span className="text-[#F6C13B]">✉️</span> {email}
-                    </span>
-                    <span className="text-white/20">|</span>
-                    <span className="flex items-center gap-0.5">
-                      <span className="text-[#F6C13B]">📞</span> {noTelp}
-                    </span>
+                  {/* Center Content: QR Code with centered logo */}
+                  <div className="flex-1 flex flex-col items-center justify-center z-10 px-4 mt-2">
+                    <div className="relative w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center shadow-md">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1c3d3f&ecc=H&data=${encodeURIComponent(
+                          cardToken && baseUrl ? `${baseUrl}/station?token=${encodeURIComponent(cardToken)}` : username || ""
+                        )}`}
+                        alt="QR Absen"
+                        className="w-full h-full object-contain"
+                      />
+                      {/* Center Logo overlay */}
+                      <div className="absolute w-7 h-7 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm border border-gray-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/logo.png"
+                          alt="SK Logo"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-center leading-none mt-4">
+                      <span className="text-[10px] font-black text-white tracking-widest uppercase">QR CODE ABSENSI</span>
+                      <span className="text-[7px] text-[#F6C13B] tracking-widest font-bold mt-1 uppercase">SAMPULKREATIV</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Footer Band */}
+                  <div className="w-full text-center text-white px-3 pb-5 pt-2 bg-gradient-to-t from-black/40 to-transparent z-10">
+                    <p className="text-[7px] font-bold tracking-wider text-gray-200 uppercase">SAMPULKREATIV TECHNOLOGY</p>
+                    <p className="text-[5px] text-gray-300 font-semibold leading-tight mt-0.5">Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521</p>
+                    <div className="flex justify-center items-center gap-1.5 mt-2.5 text-[5px] font-mono text-gray-200 font-bold border-t border-white/10 pt-2">
+                      <span className="flex items-center gap-1 truncate max-w-[100px] leading-none">
+                        <Mail size={6} className="text-[#F6C13B] flex-shrink-0" strokeWidth={2.5} />
+                        <span>{email || "-"}</span>
+                      </span>
+                      <span className="text-white/20">|</span>
+                      <span className="flex items-center gap-1 leading-none">
+                        <Phone size={6} className="text-[#F6C13B] flex-shrink-0" strokeWidth={2.5} />
+                        <span>{noTelp || "-"}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
             </div>
 
@@ -731,6 +840,12 @@ export default function ProfilePage() {
           #printable-id-card-back {
             background-color: #1C3D3F !important;
             background-image: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          #printable-id-card-back .bg-white {
+            background-color: #FFFFFF !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }

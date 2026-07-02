@@ -43,9 +43,11 @@ interface StudentRekap {
   school_name: string;
   start_date?: string;
   week_number: number;
+  relative_week_number?: number;
   total_points: number;
   comments: string;
   tags: string[];
+  extended_days?: number;
   is_published: boolean;
   days_status?: number[];
 }
@@ -148,6 +150,8 @@ export default function PklScoreboardPage() {
   // Feedback form states for selected student
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [commentInput, setCommentInput] = useState("");
+  const [extendedDaysInput, setExtendedDaysInput] = useState<number>(0);
+  const [savingExtendedDays, setSavingExtendedDays] = useState<boolean>(false);
 
   // Tag Presets
   const tagPresets = [
@@ -371,7 +375,7 @@ export default function PklScoreboardPage() {
         throw new Error(json.error || "Gagal menyimpan pengaturan");
       }
 
-      setSuccessMsg(`Pengaturan Reward & Punishment Pekan ${selectedWeek} berhasil disimpan!`);
+      setSuccessMsg(`Pengaturan Reward & Punishment Minggu ${selectedWeek} berhasil disimpan!`);
       fetchAllNotices();
     } catch (err: any) {
       setErrorMsg(err.message || "Gagal menyimpan pengaturan");
@@ -424,6 +428,42 @@ export default function PklScoreboardPage() {
       });
     }
     return dates;
+  };
+
+  const calculateWeekProgress = (
+    studentStartDateStr: string,
+    weekNum: number,
+    activeWeekNum: number,
+    extendedDays: number
+  ) => {
+    if (weekNum > activeWeekNum) return 0;
+
+    const start = new Date(studentStartDateStr);
+    const day = start.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const mondayOfStartWeek = new Date(start);
+    mondayOfStartWeek.setDate(start.getDate() + diffToMonday);
+
+    const targetMonday = new Date(mondayOfStartWeek);
+    targetMonday.setDate(mondayOfStartWeek.getDate() + (weekNum - 1) * 7);
+
+    const today = new Date(todayStr);
+
+    if (today < targetMonday) return 0;
+
+    let elapsedWorkingDays = 0;
+    const current = new Date(targetMonday);
+    while (current <= today) {
+      const dayOfWeek = current.getDay();
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        elapsedWorkingDays++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    const totalTargetDays = 5 + (extendedDays || 0);
+    const progress = Math.min(100, Math.round((elapsedWorkingDays / totalTargetDays) * 100));
+    return progress;
   };
 
   // Find selected student details
@@ -511,6 +551,7 @@ export default function PklScoreboardPage() {
     // Populate feedback form safely
     setSelectedTags(currentStudent.tags || []);
     setCommentInput(currentStudent.comments || "");
+    setExtendedDaysInput(currentStudent.extended_days || 0);
 
     return () => {
       controller.abort();
@@ -620,6 +661,7 @@ export default function PklScoreboardPage() {
           week_number: selectedWeek,
           tags: selectedTags,
           comments: commentInput,
+          extended_days: extendedDaysInput,
         }),
       });
 
@@ -636,6 +678,7 @@ export default function PklScoreboardPage() {
               ...s,
               tags: selectedTags,
               comments: commentInput,
+              extended_days: extendedDaysInput,
             };
           }
           return s;
@@ -651,6 +694,58 @@ export default function PklScoreboardPage() {
       setErrorMsg(err.message || "Gagal menyimpan rekap");
     } finally {
       setSavingFeedback(false);
+    }
+  };
+
+  const handleSaveExtendedDays = async (newExtendedDays: number) => {
+    if (!mentor || !selectedStudentId) return;
+
+    const studentObj = students.find((s) => s.student_id === selectedStudentId);
+    setExtendedDaysInput(newExtendedDays);
+    setSavingExtendedDays(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const res = await fetch(`/api/v1/mentor/rekap-mingguan/${selectedStudentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": mentor.id,
+          "x-device-id": mentor.device_id || "",
+        },
+        body: JSON.stringify({
+          week_number: selectedWeek,
+          tags: studentObj?.tags || [],
+          comments: studentObj?.comments || "",
+          extended_days: newExtendedDays,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error?.message || "Gagal memperpanjang target");
+      }
+
+      setStudents((prev) =>
+        prev.map((s) => {
+          if (s.student_id === selectedStudentId) {
+            return {
+              ...s,
+              extended_days: newExtendedDays,
+            };
+          }
+          return s;
+        })
+      );
+      setSuccessMsg("Batas perpanjangan target berhasil disimpan!");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Gagal memperpanjang target");
+      if (studentObj) {
+        setExtendedDaysInput(studentObj.extended_days || 0);
+      }
+    } finally {
+      setSavingExtendedDays(false);
     }
   };
 
@@ -817,22 +912,22 @@ export default function PklScoreboardPage() {
           </button>
 
           {/* Week Selector */}
-          <div className="flex items-center gap-2 bg-white px-3.5 py-2 border border-slate-200 rounded-xl">
-            <Calendar size={15} className="text-slate-400" />
-            <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+          <div className="flex items-center gap-2 bg-slate-50/80 px-3 py-1.5 border border-slate-150 rounded-xl">
+            <Calendar size={13} className="text-slate-400" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
               Minggu Ke
             </span>
             <select
               value={selectedWeek}
               onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
-              className="text-xs font-bold text-slate-800 outline-none bg-white cursor-pointer max-w-[280px] truncate"
+              className="text-xs font-black text-slate-550 outline-none bg-transparent cursor-pointer max-w-[280px] truncate"
             >
               {Array.from({ length: 16 }, (_, i) => {
                 const wkNum = i + 1;
                 const isCurrent = wkNum === cohortActiveWeek;
                 return (
                   <option key={wkNum} value={wkNum}>
-                    {getWeekRangeLabel(wkNum)}{isCurrent ? " (Pekan Berjalan)" : ""}
+                    {getWeekRangeLabel(wkNum)}{isCurrent ? " (Minggu Berjalan)" : ""}
                   </option>
                 );
               })}
@@ -1095,6 +1190,8 @@ export default function PklScoreboardPage() {
                     )}
                   </div>
 
+
+
                   {/* Submit Feedback */}
                   <button
                     type="submit"
@@ -1144,131 +1241,217 @@ export default function PklScoreboardPage() {
 
                   {/* Days Table */}
                   {currentStudent && (
-                    <div className="overflow-x-auto border border-slate-200/80 rounded-xl shadow-3xs">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="p-3 text-[10px] font-black text-slate-450 uppercase tracking-wider min-w-[120px]">Hari</th>
-                            {aspects.map((aspect) => (
-                              <th key={aspect.aspect_key} className="p-3 text-[10px] font-black text-slate-450 uppercase tracking-wider text-center min-w-[90px]">
-                                <div className="flex flex-col items-center gap-1 justify-center">
-                                  {getAspectIcon(aspect.icon_name)}
-                                  <span className="truncate max-w-[80px]" title={aspect.label}>{aspect.label.split(" ")[0]}</span>
-                                </div>
-                              </th>
-                            ))}
-                            <th className="p-3 text-[10px] font-black text-slate-450 uppercase tracking-wider text-right min-w-[70px]">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {getMonFriDates(cohortStartDate, selectedWeek).map((day) => {
-                            const evalDay = dailyEvals[day.dateStr] || {
-                              evaluation_date: day.dateStr,
-                              wkt_point: 0,
-                              skp_point: 0,
-                              has_point: 0,
-                              ker_point: 0,
-                              ini_point: 0,
-                            };
-                            const isFuture = day.dateStr > todayStr;
-                            const studentStartDateStr = currentStudent.start_date
-                              ? new Date(currentStudent.start_date).toISOString().split('T')[0]
-                              : "2026-06-01";
-                            const isBeforeStart = day.dateStr < studentStartDateStr;
-                            const isDisabled = isFuture || isBeforeStart;
-
-                            const dayPoints = (evalDay.wkt_point || 0) +
-                              (evalDay.skp_point || 0) +
-                              (evalDay.has_point || 0) +
-                              (evalDay.ker_point || 0) +
-                              (evalDay.ini_point || 0);
-
-                            return (
-                              <tr
-                                key={day.dateStr}
-                                className={`transition-all hover:bg-slate-50/50 ${
-                                  isDisabled ? "bg-slate-50/20 opacity-70" : "bg-white"
-                                }`}
-                              >
-                                {/* Day Title & Date */}
-                                <td className="p-3">
-                                  <div className="flex flex-col">
-                                    <span className="text-xs font-black text-slate-800 uppercase tracking-wide">
-                                      {day.name}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-slate-450 mt-0.5">
-                                      {day.formatted}
-                                    </span>
-                                    {isFuture && (
-                                      <span className="text-[7px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-1 py-0.2 rounded mt-1 w-max">
-                                        Hari Mendatang
-                                      </span>
-                                    )}
-                                    {isBeforeStart && (
-                                      <span className="text-[7px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-1 py-0.2 rounded mt-1 w-max">
-                                        Belum PKL
-                                      </span>
-                                    )}
+                    <>
+                      <div className="overflow-x-auto border border-slate-200/80 rounded-xl shadow-3xs">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                              <th className="p-3 text-[10px] font-black text-slate-450 uppercase tracking-wider min-w-[120px]">Hari</th>
+                              {aspects.map((aspect) => (
+                                <th key={aspect.aspect_key} className="p-3 text-[10px] font-black text-slate-450 uppercase tracking-wider text-center min-w-[90px]">
+                                  <div className="flex flex-col items-center gap-1 justify-center">
+                                    {getAspectIcon(aspect.icon_name)}
+                                    <span className="truncate max-w-[80px]" title={aspect.label}>{aspect.label.split(" ")[0]}</span>
                                   </div>
-                                </td>
+                                </th>
+                              ))}
+                              <th className="p-3 text-[10px] font-black text-slate-450 uppercase tracking-wider text-right min-w-[70px]">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {getMonFriDates(cohortStartDate, selectedWeek).map((day) => {
+                              const evalDay = dailyEvals[day.dateStr] || {
+                                evaluation_date: day.dateStr,
+                                wkt_point: 0,
+                                skp_point: 0,
+                                has_point: 0,
+                                ker_point: 0,
+                                ini_point: 0,
+                              };
+                              const isFuture = day.dateStr > todayStr;
+                              const studentStartDateStr = currentStudent.start_date
+                                ? new Date(currentStudent.start_date).toISOString().split('T')[0]
+                                : "2026-06-01";
+                              const isBeforeStart = day.dateStr < studentStartDateStr;
+                              const isDisabled = isFuture || isBeforeStart;
 
-                                {/* Aspect Inputs */}
-                                {aspects.map((aspect) => {
-                                  const currentPoint = (evalDay as any)[aspect.aspect_key] || 0;
+                              const dayPoints = (evalDay.wkt_point || 0) +
+                                (evalDay.skp_point || 0) +
+                                (evalDay.has_point || 0) +
+                                (evalDay.ker_point || 0) +
+                                (evalDay.ini_point || 0);
 
-                                  return (
-                                    <td key={aspect.aspect_key} className="p-3 text-center">
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        max="25"
-                                        disabled={isDisabled}
-                                        value={isDisabled && currentPoint === 0 ? "" : currentPoint}
-                                        onChange={(e) =>
-                                          handlePointChange(day.dateStr, aspect.aspect_key, e.target.value)
-                                        }
-                                        onBlur={(e) =>
-                                          handleSavePointOnBlur(day.dateStr, aspect.aspect_key, e.target.value)
-                                        }
-                                        placeholder="0"
-                                        className={`w-14 text-center text-xs font-black py-1 px-1.5 rounded-lg border transition-all outline-none ${
-                                          isDisabled
-                                            ? "bg-slate-100/50 text-slate-350 border-slate-200/50 cursor-not-allowed"
-                                            : "bg-white text-slate-750 border-slate-200 focus:border-[#2AB0B2] focus:ring-1 focus:ring-[#2AB0B2]"
-                                        }`}
-                                      />
-                                    </td>
+                              return (
+                                <tr
+                                  key={day.dateStr}
+                                  className={`transition-all hover:bg-slate-50/50 ${
+                                    isDisabled ? "bg-slate-50/20 opacity-70" : "bg-white"
+                                  }`}
+                                >
+                                  {/* Day Title & Date */}
+                                  <td className="p-3">
+                                    <div className="flex flex-col">
+                                      <span className="text-xs font-black text-slate-800 uppercase tracking-wide">
+                                        {day.name}
+                                      </span>
+                                      <span className="text-[9px] font-bold text-slate-450 mt-0.5">
+                                        {day.formatted}
+                                      </span>
+                                      {isFuture && (
+                                        <span className="text-[7px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-1 py-0.2 rounded mt-1 w-max">
+                                          Hari Mendatang
+                                        </span>
+                                      )}
+                                      {isBeforeStart && (
+                                        <span className="text-[7px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-1 py-0.2 rounded mt-1 w-max">
+                                          Belum PKL
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  {/* Aspect Inputs */}
+                                  {aspects.map((aspect) => {
+                                    const currentPoint = (evalDay as any)[aspect.aspect_key] || 0;
+
+                                    return (
+                                      <td key={aspect.aspect_key} className="p-3 text-center">
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max="25"
+                                          disabled={isDisabled}
+                                          value={isDisabled && currentPoint === 0 ? "" : currentPoint}
+                                          onChange={(e) =>
+                                            handlePointChange(day.dateStr, aspect.aspect_key, e.target.value)
+                                          }
+                                          onBlur={(e) =>
+                                            handleSavePointOnBlur(day.dateStr, aspect.aspect_key, e.target.value)
+                                          }
+                                          placeholder="0"
+                                          className={`w-14 text-center text-xs font-black py-1 px-1.5 rounded-lg border transition-all outline-none ${
+                                            isDisabled
+                                              ? "bg-slate-100/50 text-slate-350 border-slate-200/50 cursor-not-allowed"
+                                              : "bg-white text-slate-750 border-slate-200 focus:border-[#2AB0B2] focus:ring-1 focus:ring-[#2AB0B2]"
+                                          }`}
+                                        />
+                                      </td>
+                                    );
+                                  })}
+
+                                  {/* Day Total */}
+                                  <td className="p-3 text-right">
+                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${
+                                      isDisabled
+                                        ? "text-slate-350 bg-slate-50 border-slate-150"
+                                        : dayPoints > 0
+                                        ? "text-emerald-700 bg-emerald-50 border-emerald-200/50"
+                                        : "text-slate-500 bg-slate-50 border-slate-200/80"
+                                    }`}>
+                                      {dayPoints} Pts
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Progress Bar & Target Extension Section */}
+                      <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col md:flex-row gap-5 items-stretch">
+                        {/* Left: Progress Bar */}
+                        <div className="flex-1 bg-slate-50/55 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Progres Belajar Siswa</span>
+                              <span className="text-xs font-black text-slate-800">Minggu {selectedWeek} (Relatif)</span>
+                            </div>
+                            <span className="text-sm font-black text-[#2AB0B2]">
+                              {(() => {
+                                const studentStartDateStr = currentStudent.start_date
+                                  ? new Date(currentStudent.start_date).toISOString().split('T')[0]
+                                  : todayStr;
+                                const activeWeek = currentStudent.relative_week_number || 1;
+                                const prog = calculateWeekProgress(
+                                  studentStartDateStr,
+                                  selectedWeek,
+                                  activeWeek,
+                                  extendedDaysInput
+                                );
+                                return `${prog}%`;
+                              })()}
+                            </span>
+                          </div>
+
+                          {/* Progress Bar Visual */}
+                          <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden mb-1">
+                            <div
+                              className="bg-[#2AB0B2] h-full rounded-full transition-all duration-500 ease-out"
+                              style={{
+                                width: `${(() => {
+                                  const studentStartDateStr = currentStudent.start_date
+                                    ? new Date(currentStudent.start_date).toISOString().split('T')[0]
+                                    : todayStr;
+                                  const activeWeek = currentStudent.relative_week_number || 1;
+                                  return calculateWeekProgress(
+                                    studentStartDateStr,
+                                    selectedWeek,
+                                    activeWeek,
+                                    extendedDaysInput
                                   );
-                                })}
+                                })()}%`
+                              }}
+                            />
+                          </div>
+                          <span className="text-[8px] font-bold text-slate-400">
+                            * Dihitung otomatis berdasarkan hari kerja yang telah dilalui dari total target ({5 + extendedDaysInput} hari).
+                          </span>
+                        </div>
 
-                                {/* Day Total */}
-                                <td className="p-3 text-right">
-                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${
-                                    isDisabled
-                                      ? "text-slate-350 bg-slate-50 border-slate-150"
-                                      : dayPoints > 0
-                                      ? "text-emerald-700 bg-emerald-50 border-emerald-200/50"
-                                      : "text-slate-500 bg-slate-50 border-slate-200/80"
-                                  }`}>
-                                    {dayPoints} Pts
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                        {/* Right: Target Extension Dropdown */}
+                        <div className="w-full md:w-[280px] flex flex-col gap-2">
+                          <label className="block text-[9px] font-extrabold text-slate-450 uppercase tracking-wider">
+                            Perpanjangan Target (Tambahan Hari Kerja)
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={extendedDaysInput}
+                              onChange={(e) => handleSaveExtendedDays(parseInt(e.target.value, 10))}
+                              disabled={savingExtendedDays}
+                              className="w-full text-xs font-semibold pl-3 pr-8 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-[#2AB0B2] transition-all bg-white shadow-3xs cursor-pointer text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
+                            >
+                              <option value={0}>Tidak ada perpanjangan (+0 Hari)</option>
+                              <option value={1}>Perpanjang +1 Hari Kerja (Sampai Senin)</option>
+                              <option value={2}>Perpanjang +2 Hari Kerja (Sampai Selasa)</option>
+                              <option value={3}>Perpanjang +3 Hari Kerja (Sampai Rabu)</option>
+                              <option value={4}>Perpanjang +4 Hari Kerja (Sampai Kamis)</option>
+                              <option value={5}>Perpanjang +5 Hari Kerja (Sampai Jumat Depan)</option>
+                            </select>
+                          </div>
+                          {savingExtendedDays ? (
+                            <p className="text-[9px] text-[#2AB0B2] font-black flex items-center gap-1 mt-1">
+                              <Loader2 className="animate-spin" size={10} />
+                              Menyimpan perubahan...
+                            </p>
+                          ) : (
+                            <p className="text-[9px] text-slate-400 font-bold leading-snug">
+                              * Memperpanjang batas pengerjaan tugas siswa. Progres bar di kiri akan terupdate otomatis.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Pengaturan Reward & Punishment Pekan ini */}
+            {/* Pengaturan Reward & Punishment Minggu ini */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 md:p-6 mt-6">
               <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
                 <Sparkles size={16} className="text-[#2AB0B2]" />
-                Pengaturan Reward & Punishment (Pekan {selectedWeek})
+                Pengaturan Reward & Punishment (Minggu {selectedWeek})
               </h2>
 
               <form onSubmit={handleSaveNoticeSetting} className="space-y-4">
@@ -1310,7 +1493,7 @@ export default function PklScoreboardPage() {
                       onChange={(e) => setShowRecipients(e.target.checked)}
                       className="rounded border-slate-350 text-[#2AB0B2] focus:ring-[#2AB0B2]"
                     />
-                    Tampilkan pemenang & pelanggar pekan ini
+                    Tampilkan pemenang & pelanggar minggu ini
                   </label>
 
                   <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
