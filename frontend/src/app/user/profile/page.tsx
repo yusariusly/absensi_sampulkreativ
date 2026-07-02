@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Camera, Printer, X, CreditCard, Download, LogOut, Mail, Phone } from "lucide-react";
+import { User, Camera, X, CreditCard, Download, LogOut, Mail, Phone } from "lucide-react";
 import { getDeviceId, clearSession } from "../../utils/session";
 import { compressImage, IMAGE_PRESETS } from "../../utils/image";
 
@@ -20,7 +20,7 @@ export default function ProfilePage() {
   const [noTelp, setNoTelp] = useState("");
   const [noKaryawan, setNoKaryawan] = useState("");
   const [schoolName, setSchoolName] = useState("");
-  const [baseUrl, setBaseUrl] = useState("");
+  const [baseUrl] = useState(() => typeof window !== "undefined" ? window.location.origin : "");
   
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -40,32 +40,35 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setBaseUrl(window.location.origin);
       const storedUser = localStorage.getItem("v2_user");
       if (storedUser) {
         const userObj = JSON.parse(storedUser);
-        setUserId(userObj.id);
-        setCardToken(userObj.card_token || userObj.username || "");
-        setFullname(userObj.nama_lengkap);
-        setUsername(userObj.username);
-        setProfilePhoto(userObj.foto_profile || "/uploads/placeholder.jpg");
-        setTanggalLahir(userObj.tanggal_lahir || "");
-        setGender(userObj.gender || "");
-        setAlamat(userObj.alamat || "");
-        setUserRole(userObj.role || "Karyawan");
-        setJabatan(userObj.jabatan || "Karyawan");
-        setEmail(userObj.email || "");
-        setNoTelp(userObj.no_telp || "");
-        setKategori(userObj.kategori || "Karyawan");
-        setNoKaryawan(userObj.no_karyawan || "");
-        setSchoolName(userObj.school_name || "");
+        
+        // Wrap state settings in setTimeout to avoid triggering synchronous render warnings
+        setTimeout(() => {
+          setUserId(userObj.id);
+          setCardToken(userObj.card_token || userObj.username || "");
+          setFullname(userObj.nama_lengkap);
+          setUsername(userObj.username);
+          setProfilePhoto(userObj.foto_profile || "/uploads/placeholder.jpg");
+          setTanggalLahir(userObj.tanggal_lahir || "");
+          setGender(userObj.gender || "");
+          setAlamat(userObj.alamat || "");
+          setUserRole(userObj.role || "Karyawan");
+          setJabatan(userObj.jabatan || "Karyawan");
+          setEmail(userObj.email || "");
+          setNoTelp(userObj.no_telp || "");
+          setKategori(userObj.kategori || "Karyawan");
+          setNoKaryawan(userObj.no_karyawan || "");
+          setSchoolName(userObj.school_name || "");
+        }, 0);
 
         // Fetch current user details to get real-time updates
         fetch("/api/users")
           .then((res) => res.json())
           .then((usersList) => {
             if (Array.isArray(usersList)) {
-              const currentMe = usersList.find((u: any) => u.id === userObj.id);
+              const currentMe = usersList.find((u: { id: string | number }) => u.id === userObj.id);
               if (currentMe) {
                 // Update local states
                 setFullname(currentMe.nama_lengkap);
@@ -379,7 +382,7 @@ export default function ProfilePage() {
       </div>
       </div>
 
-      {/* Employee ID Card Preview Modal */}
+            {/* Employee ID Card Preview Modal */}
       {showCardModal && (
         <div id="card-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
           <div id="card-modal-content" className="bg-white rounded-3xl w-full max-w-[360px] md:max-w-[620px] overflow-hidden shadow-2xl border border-gray-100 flex flex-col items-center p-6 relative my-8">
@@ -397,11 +400,11 @@ export default function ProfilePage() {
               <h4 className="font-bold text-[#1C3D3F] text-base">
                 {userRole === 'student' ? 'Pratinjau Kartu Siswa PKL' : 'Pratinjau Kartu Karyawan'}
               </h4>
-              <p className="text-xs text-gray-400">Tampilan depan & belakang bersampingan</p>
+              <p className="text-xs text-gray-400">Tampilan depan & belakang kartu</p>
             </div>
 
             {/* The Actual ID Card Elements wrapper */}
-            <div id="printable-id-card-wrapper" className="flex flex-row gap-6 items-center justify-start md:justify-center my-3 overflow-x-auto w-full max-w-full py-2 px-1 scrollbar-thin">
+            <div id="printable-id-card-wrapper" className="flex flex-col lg:flex-row gap-6 items-center justify-center my-3 overflow-y-auto lg:overflow-x-auto w-full max-w-full py-2 px-1 scrollbar-thin">
               
               {/* CARD FRONT */}
               <div
@@ -412,7 +415,7 @@ export default function ProfilePage() {
                 {/* Top Header */}
                 <div className="relative z-10 flex flex-col items-center pt-3.5 pb-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+                  <img src="/logo.png" alt="Logo" className="logo-img w-8 h-8 object-contain" />
                   <div className="leading-none text-center mt-1">
                     <div className="text-[8.5px] font-black text-[#1C3D3F] tracking-widest">SAMPULKREATIV</div>
                     <div className="text-[5.5px] text-[#2AB0B2] tracking-widest font-black mt-0.5">TECHNOLOGY</div>
@@ -422,13 +425,13 @@ export default function ProfilePage() {
                 {/* Photo block */}
                 <div className="relative z-10 flex flex-col items-center mt-1 px-4">
                   <div className="relative">
-                    <div className="w-[125px] h-[125px] rounded-full overflow-hidden flex items-center justify-center shadow-lg"
+                    <div className="avatar-container w-[125px] h-[125px] rounded-full overflow-hidden flex items-center justify-center shadow-lg"
                       style={{border:"3px solid white", background:"#E5E7EB"}}>
                       {profilePhoto && profilePhoto !== "/uploads/placeholder.jpg" ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={profilePhoto} alt="Foto profil" className="w-full h-full object-cover" crossOrigin="anonymous" />
                       ) : (
-                        <User size={60} className="text-gray-400" />
+                        <User size={60} className="avatar-placeholder text-gray-400" />
                       )}
                     </div>
                   </div>
@@ -441,26 +444,26 @@ export default function ProfilePage() {
                     clipPath: "polygon(0 12px, 100% 0, 100% 100%, 0 100%)",
                   }}
                 >
-                  <h5 className="font-extrabold text-[#F6C13B] text-[13px] tracking-wide uppercase leading-tight truncate w-full max-w-[210px] mt-0.5">
+                  <h5 className="fullname-text font-extrabold text-[#F6C13B] text-[13px] tracking-wide uppercase leading-tight truncate w-full max-w-[210px] mt-0.5">
                     {fullname}
                   </h5>
                   
                   {/* Gold divider line */}
                   <div className="h-[1px] bg-[#F6C13B]/70 w-32 mx-auto my-1" />
                   
-                  <span className="text-white text-[8px] font-bold tracking-widest uppercase block leading-none mb-1">
+                  <span className="role-text text-white text-[8px] font-bold tracking-widest uppercase block leading-none mb-1">
                     {userRole === 'student' ? 'SISWA PKL' : jabatan}
                   </span>
 
                   {userRole === 'student' ? (
                     schoolName && (
-                      <span className="text-[#F6C13B] text-[7.5px] font-bold tracking-wider block leading-none mb-1 uppercase truncate max-w-[200px]">
+                      <span className="sub-text text-[#F6C13B] text-[7.5px] font-bold tracking-wider block leading-none mb-1 uppercase truncate max-w-[200px]">
                         {schoolName}
                       </span>
                     )
                   ) : (
                     noKaryawan && (
-                      <span className="text-[#F6C13B] text-[7.5px] font-mono tracking-wider block leading-none mb-1 select-all">
+                      <span className="sub-text text-[#F6C13B] text-[7.5px] font-mono tracking-wider block leading-none mb-1 select-all">
                         {noKaryawan}
                       </span>
                     )
@@ -469,10 +472,10 @@ export default function ProfilePage() {
                   {/* Address & Contacts */}
                   <div className="w-full mt-1 text-center text-white/95">
                     <div className="flex flex-col items-center gap-0.5 border-t border-white/10 pt-2">
-                      <span className="text-[6.5px] font-black tracking-widest text-[#F6C13B] uppercase">
+                      <span className="address-band text-[6.5px] font-black tracking-widest text-[#F6C13B] uppercase">
                         SAMPULKREATIV TECHNOLOGY
                       </span>
-                      <span className="text-[5px] text-gray-300 font-medium leading-tight max-w-[200px] mx-auto">
+                      <span className="address-detail text-[5px] text-gray-300 font-medium leading-tight max-w-[200px] mx-auto">
                         Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521
                       </span>
                     </div>
@@ -499,7 +502,7 @@ export default function ProfilePage() {
 
                   {/* Center Content: QR Code with centered logo */}
                   <div className="flex-1 flex flex-col items-center justify-center z-10 px-4 mt-2">
-                    <div className="relative w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center shadow-md">
+                    <div className="qr-container relative w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center shadow-md">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1c3d3f&ecc=H&data=${encodeURIComponent(
@@ -509,7 +512,7 @@ export default function ProfilePage() {
                         className="w-full h-full object-contain"
                       />
                       {/* Center Logo overlay */}
-                      <div className="absolute w-7 h-7 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm border border-gray-100">
+                      <div className="qr-logo-overlay absolute w-7 h-7 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm border border-gray-100">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src="/logo.png"
@@ -520,22 +523,22 @@ export default function ProfilePage() {
                     </div>
                     
                     <div className="flex flex-col items-center leading-none mt-4">
-                      <span className="text-[10px] font-black text-white tracking-widest uppercase">QR CODE ABSENSI</span>
-                      <span className="text-[7px] text-[#F6C13B] tracking-widest font-bold mt-1 uppercase">SAMPULKREATIV</span>
+                      <span className="qr-title text-[10px] font-black text-white tracking-widest uppercase">QR CODE ABSENSI</span>
+                      <span className="qr-subtitle text-[7px] text-[#F6C13B] tracking-widest font-bold mt-1 uppercase">SAMPULKREATIV</span>
                     </div>
                   </div>
 
                   {/* Bottom Footer Band */}
                   <div className="w-full text-center text-white px-3 pb-5 pt-2 bg-gradient-to-t from-black/40 to-transparent z-10">
-                    <p className="text-[7px] font-bold tracking-wider text-gray-200 uppercase">SAMPULKREATIV TECHNOLOGY</p>
-                    <p className="text-[5px] text-gray-300 font-semibold leading-tight mt-0.5">Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521</p>
-                    <div className="flex justify-center items-center gap-1.5 mt-2.5 text-[5px] font-mono text-gray-200 font-bold border-t border-white/10 pt-2">
-                      <span className="flex items-center gap-1 truncate max-w-[100px] leading-none">
+                    <p className="footer-brand-title text-[7px] font-bold tracking-wider text-gray-200 uppercase">SAMPULKREATIV TECHNOLOGY</p>
+                    <p className="footer-brand-sub text-[5px] text-gray-300 font-semibold leading-tight mt-0.5">Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521</p>
+                    <div className="footer-contact-wrapper flex justify-center items-center gap-1.5 mt-2.5 text-[5px] font-mono text-gray-200 font-bold border-t border-white/10 pt-2">
+                      <span className="footer-contact-item flex items-center gap-1 truncate max-w-[100px] leading-none">
                         <Mail size={6} className="text-[#F6C13B] flex-shrink-0" strokeWidth={2.5} />
                         <span>{email || "-"}</span>
                       </span>
                       <span className="text-white/20">|</span>
-                      <span className="flex items-center gap-1 leading-none">
+                      <span className="footer-contact-item flex items-center gap-1 leading-none">
                         <Phone size={6} className="text-[#F6C13B] flex-shrink-0" strokeWidth={2.5} />
                         <span>{noTelp || "-"}</span>
                       </span>
@@ -560,7 +563,7 @@ export default function ProfilePage() {
 
                   {/* Center Content: QR Code with centered logo */}
                   <div className="flex-1 flex flex-col items-center justify-center z-10 px-4 mt-2">
-                    <div className="relative w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center shadow-md">
+                    <div className="qr-container relative w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center shadow-md">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1c3d3f&ecc=H&data=${encodeURIComponent(
@@ -570,7 +573,7 @@ export default function ProfilePage() {
                         className="w-full h-full object-contain"
                       />
                       {/* Center Logo overlay */}
-                      <div className="absolute w-7 h-7 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm border border-gray-100">
+                      <div className="qr-logo-overlay absolute w-7 h-7 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm border border-gray-100">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src="/logo.png"
@@ -581,22 +584,22 @@ export default function ProfilePage() {
                     </div>
                     
                     <div className="flex flex-col items-center leading-none mt-4">
-                      <span className="text-[10px] font-black text-white tracking-widest uppercase">QR CODE ABSENSI</span>
-                      <span className="text-[7px] text-[#F6C13B] tracking-widest font-bold mt-1 uppercase">SAMPULKREATIV</span>
+                      <span className="qr-title text-[10px] font-black text-white tracking-widest uppercase">QR CODE ABSENSI</span>
+                      <span className="qr-subtitle text-[7px] text-[#F6C13B] tracking-widest font-bold mt-1 uppercase">SAMPULKREATIV</span>
                     </div>
                   </div>
 
                   {/* Bottom Footer Band */}
                   <div className="w-full text-center text-white px-3 pb-5 pt-2 bg-gradient-to-t from-black/40 to-transparent z-10">
-                    <p className="text-[7px] font-bold tracking-wider text-gray-200 uppercase">SAMPULKREATIV TECHNOLOGY</p>
-                    <p className="text-[5px] text-gray-300 font-semibold leading-tight mt-0.5">Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521</p>
-                    <div className="flex justify-center items-center gap-1.5 mt-2.5 text-[5px] font-mono text-gray-200 font-bold border-t border-white/10 pt-2">
-                      <span className="flex items-center gap-1 truncate max-w-[100px] leading-none">
+                    <p className="footer-brand-title text-[7px] font-bold tracking-wider text-gray-200 uppercase">SAMPULKREATIV TECHNOLOGY</p>
+                    <p className="footer-brand-sub text-[5px] text-gray-300 font-semibold leading-tight mt-0.5">Gedung BITC, Jl. HMS Mintareja, Baros, Cimahi Tengah, Jawa Barat 40521</p>
+                    <div className="footer-contact-wrapper flex justify-center items-center gap-1.5 mt-2.5 text-[5px] font-mono text-gray-200 font-bold border-t border-white/10 pt-2">
+                      <span className="footer-contact-item flex items-center gap-1 truncate max-w-[100px] leading-none">
                         <Mail size={6} className="text-[#F6C13B] flex-shrink-0" strokeWidth={2.5} />
                         <span>{email || "-"}</span>
                       </span>
                       <span className="text-white/20">|</span>
-                      <span className="flex items-center gap-1 leading-none">
+                      <span className="footer-contact-item flex items-center gap-1 leading-none">
                         <Phone size={6} className="text-[#F6C13B] flex-shrink-0" strokeWidth={2.5} />
                         <span>{noTelp || "-"}</span>
                       </span>
@@ -693,7 +696,7 @@ export default function ProfilePage() {
               
               {/* Help/Tip under print button */}
               <p className="text-[9px] text-gray-400 text-center mt-3 leading-normal">
-                💡 <b>Tips:</b> Pilih opsi <b>"Simpan sebagai PDF"</b> atau <b>"Save as PDF"</b> pada dialog cetak browser Anda untuk mengunduh file kartu karyawan.
+                💡 <b>Tips:</b> Pilih opsi <b>&quot;Simpan sebagai PDF&quot;</b> atau <b>&quot;Save as PDF&quot;</b> pada dialog cetak browser Anda untuk mengunduh file kartu karyawan.
               </p>
             </div>
           </div>
@@ -743,8 +746,200 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* CSS style overrides for page printing */}
+      {/* CSS style overrides for page printing & screen layout adjustments */}
       <style dangerouslySetInnerHTML={{ __html: `
+        @media screen {
+          /* Mobile & Tablet view */
+          #card-modal-overlay {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: #ffffff !important;
+            z-index: 50 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+            overflow-y: auto !important;
+          }
+
+          #card-modal-content {
+            width: 100% !important;
+            max-width: none !important;
+            height: 100% !important;
+            min-height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 1.5rem !important;
+            margin: 0 !important;
+          }
+
+          /* Scale up cards on mobile/tablet screen */
+          .printable-card-side {
+            width: 290px !important;
+            height: 460px !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+          }
+          
+          .printable-card-side .logo-img {
+            width: 44px !important;
+            height: 44px !important;
+          }
+          .printable-card-side .avatar-container {
+            width: 155px !important;
+            height: 155px !important;
+          }
+          .printable-card-side .avatar-placeholder {
+            width: 75px !important;
+            height: 75px !important;
+          }
+          .printable-card-side h5.fullname-text {
+            font-size: 16px !important;
+            max-width: 250px !important;
+          }
+          .printable-card-side .role-text {
+            font-size: 10px !important;
+          }
+          .printable-card-side .sub-text {
+            font-size: 9.5px !important;
+            max-width: 240px !important;
+          }
+          .printable-card-side .address-band {
+            font-size: 8px !important;
+          }
+          .printable-card-side .address-detail {
+            font-size: 6.5px !important;
+            max-width: 245px !important;
+          }
+          .printable-card-side .qr-container {
+            width: 190px !important;
+            height: 190px !important;
+          }
+          .printable-card-side .qr-logo-overlay {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          .printable-card-side .qr-title {
+            font-size: 12px !important;
+          }
+          .printable-card-side .qr-subtitle {
+            font-size: 8.5px !important;
+          }
+          .printable-card-side .footer-brand-title {
+            font-size: 8.5px !important;
+          }
+          .printable-card-side .footer-brand-sub {
+            font-size: 6.5px !important;
+          }
+          .printable-card-side .footer-contact-wrapper {
+            margin-top: 12px !important;
+            padding-top: 10px !important;
+          }
+          .printable-card-side .footer-contact-item {
+            font-size: 6.5px !important;
+            max-width: 120px !important;
+          }
+          .printable-card-side .footer-contact-item svg {
+            width: 8px !important;
+            height: 8px !important;
+          }
+
+          /* Desktop View Override */
+          @media (min-width: 1024px) {
+            #card-modal-overlay {
+              position: fixed !important;
+              inset: 0 !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              background-color: rgba(0, 0, 0, 0.6) !important;
+              backdrop-filter: blur(4px) !important;
+              padding: 1.5rem !important;
+            }
+
+            #card-modal-content {
+              width: 100% !important;
+              max-width: 780px !important;
+              height: auto !important;
+              min-height: unset !important;
+              border-radius: 1.5rem !important;
+              border: 1px solid #f3f4f6 !important;
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+              padding: 2.5rem !important;
+              margin: 2rem 0 !important;
+            }
+
+            /* Even larger card scale on desktop */
+            .printable-card-side {
+              width: 300px !important;
+              height: 475px !important;
+            }
+            .printable-card-side .logo-img {
+              width: 48px !important;
+              height: 48px !important;
+            }
+            .printable-card-side .avatar-container {
+              width: 160px !important;
+              height: 160px !important;
+            }
+            .printable-card-side .avatar-placeholder {
+              width: 80px !important;
+              height: 80px !important;
+            }
+            .printable-card-side h5.fullname-text {
+              font-size: 17px !important;
+              max-width: 260px !important;
+            }
+            .printable-card-side .role-text {
+              font-size: 11px !important;
+            }
+            .printable-card-side .sub-text {
+              font-size: 10px !important;
+              max-width: 250px !important;
+            }
+            .printable-card-side .address-band {
+              font-size: 8.5px !important;
+            }
+            .printable-card-side .address-detail {
+              font-size: 7px !important;
+              max-width: 250px !important;
+            }
+            .printable-card-side .qr-container {
+              width: 200px !important;
+              height: 200px !important;
+            }
+            .printable-card-side .qr-logo-overlay {
+              width: 38px !important;
+              height: 38px !important;
+            }
+            .printable-card-side .qr-title {
+              font-size: 13px !important;
+            }
+            .printable-card-side .qr-subtitle {
+              font-size: 9px !important;
+            }
+            .printable-card-side .footer-brand-title {
+              font-size: 9px !important;
+            }
+            .printable-card-side .footer-brand-sub {
+              font-size: 7px !important;
+            }
+            .printable-card-side .footer-contact-wrapper {
+              margin-top: 14px !important;
+              padding-top: 12px !important;
+            }
+            .printable-card-side .footer-contact-item {
+              font-size: 7px !important;
+              max-width: 130px !important;
+            }
+            .printable-card-side .footer-contact-item svg {
+              width: 9px !important;
+              height: 9px !important;
+            }
+          }
+        }
+
         @media print {
           /* Force hide anything with print:hidden class */
           .print\\:hidden, [class*="print:hidden"] {
